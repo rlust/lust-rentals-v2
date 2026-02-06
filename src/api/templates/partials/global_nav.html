@@ -1,0 +1,40 @@
+{% set path = request.url.path %}
+<nav class="global-nav" data-global-nav>
+    <div class="nav-inner">
+        <a class="nav-brand" href="/" aria-label="Lust Rentals Dashboard">
+            <span class="nav-brand-icon">&#127969;</span>
+            <span class="nav-brand-text">Lust Rentals</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-controls="navMenu" aria-expanded="false">
+            <span class="nav-toggle-bar"></span>
+            <span class="nav-toggle-bar"></span>
+            <span class="nav-toggle-bar"></span>
+        </button>
+        <div class="nav-menu" id="navMenu">
+            <a href="/" class="nav-link {% if path == '/' or path == '/dashboard-v2' %}active{% endif %}">Dashboard</a>
+            <a href="/review-enhanced" class="nav-link {% if path == '/review-enhanced' %}active{% endif %}">Review Enhanced</a>
+            <a href="/review" class="nav-link {% if path == '/review' %}active{% endif %}">Classic Review</a>
+            <a href="/properties-ui" class="nav-link {% if path == '/properties-ui' %}active{% endif %}">Properties</a>
+            <a href="/rules-ui" class="nav-link {% if path == '/rules-ui' %}active{% endif %}">Rules</a>
+            <a href="/transactions" class="nav-link {% if path == '/transactions' %}active{% endif %}">Transactions</a>
+            <div class="nav-dropdown {% if path.startswith('/reports') %}active{% endif %}">
+                <button class="nav-link nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+                    Reports
+                    <span class="nav-caret">&#9662;</span>
+                </button>
+                <div class="nav-dropdown-menu" role="menu">
+                    <a href="/reports#annual" class="nav-dropdown-item">Annual</a>
+                    <a href="/reports#schedule-e" class="nav-dropdown-item">Schedule E</a>
+                    <a href="/reports#property-pdf" class="nav-dropdown-item">PDF</a>
+                    <a href="/reports#property-excel" class="nav-dropdown-item">Excel</a>
+                </div>
+            </div>
+            <a href="/backup" class="nav-link {% if path == '/backup' %}active{% endif %}">Backups</a>
+            <a href="/docs" class="nav-link">Docs</a>
+            <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
+                <span class="theme-toggle-icon" data-theme-icon>☀️</span>
+                <span class="theme-toggle-text" data-theme-label>Light</span>
+            </button>
+        </div>
+    </div>
+</nav>

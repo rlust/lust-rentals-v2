@@ -231,10 +231,20 @@ class FinancialDataProcessor:
                     "amount": str(row.get('amount', 0.0)),
                     "payee": row.get('payee', '')
                 }
-                _, prop_rule, rule_name = self.rules_manager.evaluate_transaction(tx_data)
-                
-                if prop_rule:
-                    df.at[idx, 'property_name'] = prop_rule
+                actions, rule_name = self.rules_manager.evaluate_transaction(tx_data)
+                applied = False
+
+                for action in actions:
+                    action_type = action.get("type")
+                    action_value = action.get("value")
+                    if action_type == "set_property" and action_value:
+                        df.at[idx, 'property_name'] = action_value
+                        applied = True
+                    elif action_type == "set_category" and action_value and 'category' in df.columns:
+                        df.at[idx, 'category'] = action_value
+                        applied = True
+
+                if applied:
                     # Initialize mapping_status if missing
                     if 'mapping_status' not in df.columns:
                         df['mapping_status'] = 'mapping_missing'
@@ -298,6 +308,27 @@ class FinancialDataProcessor:
         if 'property_name' not in df.columns:
             df['property_name'] = pd.NA
         df['property_name'] = df['property_name'].astype('object')
+
+        # Apply Automation Rules (Property Assignment)
+        if self.rules_manager:
+            for idx, row in df.iterrows():
+                if pd.notna(row.get('property_name')) and row.get('property_name') != 'UNASSIGNED':
+                    continue
+
+                tx_data = {
+                    "description": row.get('description', ''),
+                    "memo": row.get('memo', ''),
+                    "amount": str(row.get('amount', 0.0)),
+                    "payee": row.get('payee', '')
+                }
+                actions, _ = self.rules_manager.evaluate_transaction(tx_data)
+                for action in actions:
+                    action_type = action.get("type")
+                    action_value = action.get("value")
+                    if action_type == "set_property" and action_value:
+                        df.at[idx, 'property_name'] = action_value
+                    elif action_type == "set_category" and action_value and 'category' in df.columns:
+                        df.at[idx, 'category'] = action_value
 
         return df
 

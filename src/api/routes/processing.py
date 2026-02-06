@@ -16,7 +16,6 @@ from src.api.models import BankProcessRequest, BankProcessResponse
 from src.utils.validation import DataValidator
 
 router = APIRouter()
-CONFIG = get_config()
 
 
 @router.post("/upload/bank-file")
@@ -80,7 +79,7 @@ async def upload_bank_file(request: Request, file: UploadFile = File(...)) -> di
         raise HTTPException(status_code=400, detail=f"Invalid CSV format: {str(e)}")
 
     # Save to raw data directory
-    raw_dir = CONFIG.data_dir / "raw"
+    raw_dir = get_config().data_dir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
 
     file_path = raw_dir / file.filename
@@ -132,7 +131,7 @@ def validate_bank_file(request: BankProcessRequest) -> dict:
     if request.bank_file_path is not None:
         bank_path = Path(request.bank_file_path)
     else:
-        bank_path = CONFIG.data_dir / "raw" / "transaction_report-3.csv"
+        bank_path = get_config().data_dir / "raw" / "transaction_report-3.csv"
 
     if not bank_path.exists():
         raise HTTPException(
@@ -189,7 +188,7 @@ def get_latest_transaction_file() -> dict:
     This endpoint replaces hardcoded path logic in client-side code,
     making the application portable across different systems.
     """
-    raw_dir = CONFIG.data_dir / "raw"
+    raw_dir = get_config().data_dir / "raw"
 
     if not raw_dir.exists():
         raise HTTPException(
@@ -296,7 +295,7 @@ def get_processing_status() -> dict:
     they have been recently updated (within last 10 seconds). Used by the
     review interface to poll for completion after triggering reprocessing.
     """
-    processed_dir = CONFIG.data_dir / "processed"
+    processed_dir = get_config().data_dir / "processed"
 
     income_file = processed_dir / "processed_income.csv"
     expenses_file = processed_dir / "processed_expenses.csv"

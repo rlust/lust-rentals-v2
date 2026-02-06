@@ -1,11 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Property Management - Lust Rentals</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/components.css">
+{% extends "base.html" %}
+{% block title %}Property Management - Lust Rentals{% endblock %}
+{% block head_extra %}
     <style>
         * {
             margin: 0;
@@ -14,22 +9,23 @@
         }
 
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --secondary: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --dark: #1e293b;
-            --gray: #64748b;
-            --light-gray: #f1f5f9;
-            --white: #ffffff;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --primary: var(--theme-accent);
+            --primary-dark: var(--theme-accent-strong);
+            --secondary: var(--theme-success);
+            --danger: var(--theme-danger);
+            --warning: var(--theme-warning);
+            --dark: var(--theme-text);
+            --gray: var(--theme-text-muted);
+            --light-gray: var(--theme-surface-muted);
+            --white: var(--theme-surface);
+            --shadow: var(--theme-shadow-md);
+            --shadow-lg: var(--theme-shadow-lg);
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--theme-bg);
+            color: var(--dark);
             min-height: 100vh;
             padding: 2rem;
         }
@@ -362,69 +358,9 @@
             gap: 0.5rem;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+{% block content %}
     <div class="container">
-        <!-- Global Navigation -->
-        <nav class="global-nav" id="globalNav">
-            <div class="nav-header">
-                <a href="/dashboard-v2" class="nav-brand">
-                    <span class="nav-brand-icon">&#127969;</span>
-                    <span>
-                        <span class="nav-brand-text">Lust Rentals</span>
-                        <span class="nav-brand-sub">Tax Reporting</span>
-                    </span>
-                </a>
-                <button class="nav-toggle" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Toggle navigation">
-                    &#9776;
-                </button>
-            </div>
-            <div class="nav-menu" id="navMenu">
-                <div class="nav-group">
-                    <span class="nav-group-label">Main</span>
-                    <a href="/dashboard-v2" class="nav-link">
-                        <span class="nav-link-icon">&#128200;</span>
-                        Dashboard
-                    </a>
-                </div>
-                <div class="nav-divider"></div>
-                <div class="nav-group">
-                    <span class="nav-group-label">Review</span>
-                    <a href="/review-enhanced" class="nav-link">
-                        <span class="nav-link-icon">&#10024;</span>
-                        Review Transactions
-                    </a>
-                    <a href="/review" class="nav-link">
-                        <span class="nav-link-icon">&#128269;</span>
-                        Classic Review
-                    </a>
-                </div>
-                <div class="nav-divider"></div>
-                <div class="nav-group">
-                    <span class="nav-group-label">Manage</span>
-                    <a href="/transactions" class="nav-link">
-                        <span class="nav-link-icon">&#128188;</span>
-                        Transactions
-                    </a>
-                    <a href="/properties-ui" class="nav-link active">
-                        <span class="nav-link-icon">&#127970;</span>
-                        Properties
-                    </a>
-                    <a href="/rules-ui" class="nav-link">
-                        <span class="nav-link-icon">&#9881;</span>
-                        Rules
-                    </a>
-                </div>
-                <div class="nav-divider"></div>
-                <div class="nav-group">
-                    <span class="nav-group-label">Tools</span>
-                    <a href="/docs" class="nav-link" target="_blank">
-                        <span class="nav-link-icon">&#128218;</span>
-                        API Docs
-                    </a>
-                </div>
-            </div>
-        </nav>
 
         <!-- Header -->
         <div class="header">
@@ -520,6 +456,8 @@
         </div>
     </div>
 
+{% endblock %}
+{% block scripts %}
     <script>
         const API_BASE = window.location.origin;
         let properties = [];
@@ -717,5 +655,4 @@
             setTimeout(() => alert.classList.remove('show'), 5000);
         }
     </script>
-</body>
-</html>
+{% endblock %}

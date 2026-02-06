@@ -13,7 +13,6 @@ from src.utils.backup import DataBackupManager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-CONFIG = get_config()
 
 
 # ============================================================================
@@ -71,7 +70,7 @@ def create_full_backup(
     logger.info(f"Creating full backup (include_reports={include_reports})")
 
     try:
-        manager = DataBackupManager(CONFIG.data_dir)
+        manager = DataBackupManager(get_config().data_dir)
         result = manager.create_full_backup(include_reports=include_reports)
 
         return BackupResponse(**result)
@@ -92,7 +91,7 @@ def backup_database_only(http_request: Request) -> BackupResponse:
     logger.info("Creating database-only backup")
 
     try:
-        manager = DataBackupManager(CONFIG.data_dir)
+        manager = DataBackupManager(get_config().data_dir)
         result = manager.backup_database_only()
 
         return BackupResponse(**result)
@@ -115,7 +114,7 @@ def list_backups(http_request: Request) -> List[BackupInfo]:
     logger.info("Listing backups")
 
     try:
-        manager = DataBackupManager(CONFIG.data_dir)
+        manager = DataBackupManager(get_config().data_dir)
         backups = manager.list_backups()
 
         return [BackupInfo(**backup) for backup in backups]
@@ -139,7 +138,7 @@ def download_backup(http_request: Request, backup_name: str):
     logger.info(f"Download requested for backup: {backup_name}")
 
     try:
-        manager = DataBackupManager(CONFIG.data_dir)
+        manager = DataBackupManager(get_config().data_dir)
         backup_path = manager.backup_dir / backup_name
 
         if not backup_path.exists():
@@ -183,7 +182,7 @@ def export_database_tables(
     logger.info(f"Exporting database tables (year={year})")
 
     try:
-        manager = DataBackupManager(CONFIG.data_dir)
+        manager = DataBackupManager(get_config().data_dir)
         result = manager.export_database_tables(year=year)
 
         return ExportResponse(**result)
@@ -220,7 +219,7 @@ def export_for_accountant(
     logger.info(f"Creating accountant export package for year {year}")
 
     try:
-        manager = DataBackupManager(CONFIG.data_dir)
+        manager = DataBackupManager(get_config().data_dir)
         result = manager.export_for_accountant(year)
 
         return ExportResponse(**result)
@@ -246,7 +245,7 @@ def download_export_package(http_request: Request, package_name: str):
     logger.info(f"Download requested for export package: {package_name}")
 
     try:
-        manager = DataBackupManager(CONFIG.data_dir)
+        manager = DataBackupManager(get_config().data_dir)
         package_path = manager.backup_dir / package_name
 
         if not package_path.exists():
@@ -292,7 +291,7 @@ def restore_backup(
     logger.warning(f"Restore requested for backup: {backup_name}")
 
     try:
-        manager = DataBackupManager(CONFIG.data_dir)
+        manager = DataBackupManager(get_config().data_dir)
         backup_path = manager.backup_dir / backup_name
 
         if not backup_path.exists():

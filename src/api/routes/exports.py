@@ -15,7 +15,6 @@ from src.categorization.category_utils import normalize_category, get_display_na
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-CONFIG = get_config()
 
 
 def resolve_report_year(year: Optional[int]) -> int:
@@ -38,7 +37,7 @@ def export_dataset(http_request: Request, dataset: str) -> StreamingResponse:
     if table_name is None:
         raise HTTPException(status_code=404, detail="Dataset not found.")
 
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
     if not db_path.exists():
         raise HTTPException(status_code=404, detail="Processed database not found. Run processing first.")
 
@@ -79,7 +78,7 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
     from openpyxl.utils import get_column_letter
 
     resolved_year = resolve_report_year(year)
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         raise HTTPException(

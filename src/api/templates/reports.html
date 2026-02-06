@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Reports - Lust Rentals{% endblock %}
+{% block head_extra %}
+    <style>
+        :root {
+            --primary: var(--theme-accent);
+            --primary-dark: var(--theme-accent-strong);
+            --secondary: var(--theme-success);
+            --dark: var(--theme-text);
+            --gray: var(--theme-text-muted);
+            --light-gray: var(--theme-surface-muted);
+            --white: var(--theme-surface);
+            --shadow: var(--theme-shadow-lg);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--theme-bg);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            color: var(--dark);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .page-header p {
+            color: var(--gray);
+            margin-top: 0.5rem;
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .report-card {
+            background: var(--white);
+            padding: 1.75rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .report-card h2 {
+            color: var(--dark);
+            font-size: 1.25rem;
+        }
+
+        .report-card p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        .report-card a {
+            margin-top: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container">
+
+        <section class="page-header">
+            <h1>&#128202; Reports Center</h1>
+            <p>Generate and download your tax reporting artifacts. Use the dashboard for processing and report runs.</p>
+        </section>
+
+        <section class="reports-grid">
+            <article class="report-card" id="annual">
+                <h2>Annual</h2>
+                <p>High-level annual summary for the selected tax year.</p>
+                <a href="/">Open Dashboard &#8594;</a>
+            </article>
+            <article class="report-card" id="schedule-e">
+                <h2>Schedule E</h2>
+                <p>Schedule E exports and per-property breakdowns.</p>
+                <a href="/">Open Dashboard &#8594;</a>
+            </article>
+            <article class="report-card" id="property-pdf">
+                <h2>PDF</h2>
+                <p>Property income and expense report (PDF).</p>
+                <a href="/">Open Dashboard &#8594;</a>
+            </article>
+            <article class="report-card" id="property-excel">
+                <h2>Excel</h2>
+                <p>Property income and expense report (Excel).</p>
+                <a href="/">Open Dashboard &#8594;</a>
+            </article>
+        </section>
+    </div>
+{% endblock %}

@@ -1,26 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>Lust Rentals Review Dashboard</title>
+{% extends "base.html" %}
+{% block title %}Lust Rentals Review Dashboard{% endblock %}
+{% block head_extra %}
     <style>
         /* Base & Typography */
         body {
             font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             margin: 2rem;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
-            color: #1e293b;
+            background: var(--theme-bg);
+            color: var(--theme-text);
             min-height: 100vh;
         }
         h1 {
-            color: #0f172a;
+            color: var(--theme-text);
             margin-bottom: 1.5rem;
             font-size: 2rem;
             font-weight: 700;
             letter-spacing: -0.025em;
         }
         h2 {
-            color: #2563eb;
+            color: var(--theme-accent);
             margin-bottom: 1rem;
             font-size: 1.5rem;
             font-weight: 600;
@@ -30,14 +28,14 @@
         }
         h3 {
             font-size: 1.1rem;
-            color: #334155;
+            color: var(--theme-text-muted);
             margin-bottom: 0.75rem;
             font-weight: 600;
         }
 
         /* Enhanced Sections */
         .section {
-            background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
+            background: linear-gradient(135deg, var(--theme-surface) 0%, var(--theme-surface-muted) 100%);
             padding: 2rem;
             border-radius: 1rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -58,7 +56,7 @@
             margin-bottom: 2rem;
         }
         .card {
-            background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+            background: linear-gradient(135deg, var(--theme-surface) 0%, #f0f9ff 100%);
             border-radius: 1rem;
             padding: 1.5rem;
             display: flex;
@@ -77,7 +75,7 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8);
+            background: linear-gradient(90deg, #3b82f6, var(--theme-accent), #1d4ed8);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
@@ -99,7 +97,7 @@
         }
         .card-label {
             font-size: 0.875rem;
-            color: #64748b;
+            color: var(--theme-text-muted);
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -107,7 +105,7 @@
         .card-value {
             font-size: 2rem;
             font-weight: 700;
-            color: #0f172a;
+            color: var(--theme-text);
             line-height: 1;
         }
         .card.status-ready {
@@ -137,7 +135,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 1.5rem;
-            background: #ffffff;
+            background: var(--theme-surface);
             border-radius: 0.75rem;
             overflow: hidden;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -146,15 +144,15 @@
             padding: 0.875rem;
             text-align: left;
             vertical-align: middle;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--theme-border);
         }
         th {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: linear-gradient(135deg, var(--theme-surface-muted) 0%, var(--theme-surface-muted) 100%);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             font-size: 0.75rem;
             font-weight: 600;
-            color: #475569;
+            color: var(--theme-text-muted);
             border-bottom: 2px solid #cbd5e1;
         }
         tbody tr {
@@ -177,7 +175,7 @@
             padding: 0.5rem 1rem;
             border: none;
             border-radius: 0.5rem;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, var(--theme-accent) 100%);
             color: #fff;
             cursor: pointer;
             font-weight: 600;
@@ -186,7 +184,7 @@
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
         button:hover:not(:disabled) {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, var(--theme-accent) 0%, #1d4ed8 100%);
             transform: translateY(-1px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
@@ -202,10 +200,10 @@
         input, select {
             padding: 0.5rem 0.75rem;
             border-radius: 0.5rem;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--theme-border);
             min-width: 10rem;
             transition: all 0.2s ease;
-            background: #ffffff;
+            background: var(--theme-surface);
         }
         input:focus, select:focus {
             outline: none;
@@ -292,7 +290,7 @@
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #475569;
+            color: var(--theme-text-muted);
             gap: 0.35rem;
             font-weight: 600;
         }
@@ -300,10 +298,10 @@
         /* Export Log */
         .export-log {
             margin-top: 1rem;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: linear-gradient(135deg, var(--theme-surface-muted) 0%, var(--theme-surface-muted) 100%);
             border-radius: 0.75rem;
             padding: 1.25rem;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--theme-border);
         }
         .export-log table {
             margin: 0;
@@ -322,10 +320,10 @@
             align-items: center;
             gap: 0.75rem;
             justify-content: space-between;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            background: linear-gradient(135deg, var(--theme-surface) 0%, var(--theme-surface-muted) 100%);
             padding: 1rem 1.25rem;
             border-radius: 0.75rem;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--theme-border);
             transition: all 0.2s ease;
         }
         .artifact-row:hover {
@@ -339,18 +337,18 @@
             gap: 0.25rem;
         }
         .artifact-row small {
-            color: #64748b;
+            color: var(--theme-text-muted);
             font-size: 0.75rem;
         }
 
         /* Empty State */
         .empty {
             font-style: italic;
-            color: #64748b;
+            color: var(--theme-text-muted);
             margin: 2rem 0;
             text-align: center;
             padding: 3rem;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: linear-gradient(135deg, var(--theme-surface-muted) 0%, var(--theme-surface-muted) 100%);
             border-radius: 0.75rem;
             border: 2px dashed #cbd5e1;
         }
@@ -408,7 +406,7 @@
         .progress-bar {
             width: 100%;
             height: 8px;
-            background: #e2e8f0;
+            background: var(--theme-border);
             border-radius: 999px;
             overflow: hidden;
             position: relative;
@@ -461,7 +459,7 @@
             color: white;
         }
         .status-badge.info {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: linear-gradient(135deg, #3b82f6, var(--theme-accent));
             color: white;
         }
 
@@ -514,7 +512,7 @@
             justify-content: center;
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: linear-gradient(135deg, #3b82f6, var(--theme-accent));
             color: white;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
@@ -535,8 +533,8 @@
             border-radius: 1rem;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+{% block content %}
     <!-- Enhanced Header with System Status -->
     <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 2rem; border-radius: 1rem; margin-bottom: 2rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); color: white;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem;">
@@ -576,10 +574,10 @@
                 <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem;">Review Mapped Transactions</div>
                 <div style="opacity: 0.9; font-size: 0.875rem;">View and edit all mapped income and expense transactions. Export to Excel for bulk editing.</div>
             </a>
-            <div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); padding: 1.5rem; border-radius: 0.75rem; border: 2px solid #e2e8f0;">
+            <div style="background: linear-gradient(135deg, var(--theme-surface) 0%, var(--theme-surface-muted) 100%); padding: 1.5rem; border-radius: 0.75rem; border: 2px solid var(--theme-border);">
                 <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
-                <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem; color: #1e293b;">Review Pending Items</div>
-                <div style="color: #64748b; font-size: 0.875rem;">Review unmapped deposits and uncategorized expenses below in this dashboard.</div>
+                <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem; color: var(--theme-text);">Review Pending Items</div>
+                <div style="color: var(--theme-text-muted); font-size: 0.875rem;">Review unmapped deposits and uncategorized expenses below in this dashboard.</div>
             </div>
         </div>
     </div>
@@ -597,18 +595,18 @@
                         <span>💾 Database Status</span>
                         <span id="db-status-badge" class="status-badge info" style="font-size: 0.75rem;">Checking...</span>
                     </h3>
-                    <p id="db-status-message" style="margin: 0 0 0.75rem 0; color: #475569; font-size: 1rem; line-height: 1.5;">Loading database status...</p>
+                    <p id="db-status-message" style="margin: 0 0 0.75rem 0; color: var(--theme-text-muted); font-size: 1rem; line-height: 1.5;">Loading database status...</p>
                     <div id="db-status-progress" style="display: none;">
                         <div class="progress-bar">
                             <div class="progress-fill" id="db-progress-fill" style="width: 0%;"></div>
                         </div>
-                        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b; display: flex; justify-content: space-between;">
+                        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--theme-text-muted); display: flex; justify-content: space-between;">
                             <span id="db-progress-label">Checking database...</span>
                             <span id="db-progress-percent">0%</span>
                         </div>
                     </div>
                 </div>
-                <button onclick="refreshDatabaseStatus()" class="pulse-ring" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); font-size: 1rem; padding: 0.75rem 1.5rem;">
+                <button onclick="refreshDatabaseStatus()" class="pulse-ring" style="background: linear-gradient(135deg, #3b82f6 0%, var(--theme-accent) 100%); font-size: 1rem; padding: 0.75rem 1.5rem;">
                     🔄 Refresh Status
                 </button>
             </div>
@@ -616,7 +614,7 @@
             <!-- Enhanced Table Information with Metrics -->
             <div id="db-tables-info" style="margin-top: 1.5rem; display: none;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-                    <h3 style="font-size: 1.1rem; margin: 0; color: #1e293b; display: flex; align-items: center; gap: 0.5rem;">
+                    <h3 style="font-size: 1.1rem; margin: 0; color: var(--theme-text); display: flex; align-items: center; gap: 0.5rem;">
                         📊 Database Tables & Metrics
                     </h3>
                     <div id="db-total-records" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 999px; border: 2px solid #bae6fd; font-weight: 600; color: #0c4a6e;">
@@ -642,7 +640,7 @@
         <div style="margin-bottom: 1.5rem;">
             <h3>Step 1: Upload Bank Transaction File</h3>
             <div style="display: flex; align-items: center; gap: 1rem; padding: 1.5rem; background: white; border-radius: 0.75rem; border: 2px dashed #cbd5e1;">
-                <input type="file" id="bank-file-input" accept=".csv" style="flex: 1; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; background: #f8fafc;" onchange="handleFileSelect(event)">
+                <input type="file" id="bank-file-input" accept=".csv" style="flex: 1; padding: 0.75rem; border: 2px solid var(--theme-border); border-radius: 0.5rem; background: var(--theme-surface-muted);" onchange="handleFileSelect(event)">
                 <button onclick="uploadBankFile()" id="upload-btn" disabled style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); min-width: 150px;">📤 Upload File</button>
             </div>
             <div id="upload-status" style="margin-top: 0.75rem; padding: 0.75rem; border-radius: 0.5rem; display: none;"></div>
@@ -658,7 +656,7 @@
                 </label>
                 <label>
                     Uploaded file (auto-filled)
-                    <input type="text" id="import-bank-file" placeholder="Will be set after upload" readonly style="background: #f8fafc;" />
+                    <input type="text" id="import-bank-file" placeholder="Will be set after upload" readonly style="background: var(--theme-surface-muted);" />
                 </label>
                 <button onclick="processUploadedFile()" id="process-uploaded-btn" disabled style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); font-size: 1.1rem; padding: 0.75rem 1.5rem;">▶️ Run Processor</button>
             </div>
@@ -674,7 +672,7 @@
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
                 <div>
                     <h3 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 1.1rem;">📋 Review Status</h3>
-                    <p style="margin: 0; color: #475569; font-size: 0.95rem;">
+                    <p style="margin: 0; color: var(--theme-text-muted); font-size: 0.95rem;">
                         {% if income_pending_count == 0 and expense_pending_count == 0 %}
                         <span class="status-badge success">🎉 All items reviewed!</span>
                         {% elif income_pending_count + expense_pending_count < 10 %}
@@ -685,7 +683,7 @@
                     </p>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Overall Progress</div>
+                    <div style="font-size: 0.85rem; color: var(--theme-text-muted); margin-bottom: 0.25rem;">Overall Progress</div>
                     <div style="font-size: 1.75rem; font-weight: 700; color: #1e40af;">
                         {% set total_items = income_pending_count + expense_pending_count %}
                         {% if total_items == 0 %}100{% else %}0{% endif %}%
@@ -845,10 +843,10 @@
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
                 <div style="flex: 1;">
                     <h3 style="margin: 0 0 0.5rem 0; color: #6b21a8; font-size: 1.1rem;">🔄 Application Status</h3>
-                    <p id="system-status-message" style="margin: 0; color: #475569; font-size: 0.95rem;">
+                    <p id="system-status-message" style="margin: 0; color: var(--theme-text-muted); font-size: 0.95rem;">
                         <span class="status-badge info">Checking status...</span>
                     </p>
-                    <div id="git-info" style="margin-top: 0.75rem; font-size: 0.85rem; color: #64748b; display: none;">
+                    <div id="git-info" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--theme-text-muted); display: none;">
                         <div><strong>Branch:</strong> <span id="git-branch">-</span></div>
                         <div><strong>Commit:</strong> <span id="git-commit">-</span></div>
                         <div><strong>Updates:</strong> <span id="git-updates">-</span></div>
@@ -913,7 +911,7 @@
         <div class="controls">
             <div>
                 <h3>🔄 Update Application</h3>
-                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">
+                <p style="color: var(--theme-text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
                     Pull the latest changes from GitHub repository. Server restart required after update.
                 </p>
                 <div class="control-group">
@@ -924,14 +922,14 @@
                         🔄 Update & Restart
                     </button>
                 </div>
-                <div id="update-output" style="display: none; margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; max-height: 300px; overflow-y: auto;">
+                <div id="update-output" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--theme-surface-muted); border-radius: 0.5rem; border: 1px solid var(--theme-border); max-height: 300px; overflow-y: auto;">
                     <pre id="update-log" style="margin: 0; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word;"></pre>
                 </div>
             </div>
 
             <div>
                 <h3>🔄 Restart Server</h3>
-                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">
+                <p style="color: var(--theme-text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
                     Restart the application server. Connection will be briefly interrupted (5-10 seconds).
                 </p>
                 <div class="control-group">
@@ -1100,6 +1098,8 @@
         {% endif %}
     </div>
 
+{% endblock %}
+{% block scripts %}
     <script>
         // Enhanced toast notifications with detail support
         let toastTimeout;
@@ -1914,7 +1914,7 @@
                         const isMainTable = tableName.includes('processed_income') || tableName.includes('processed_expenses');
                         const hasData = tableInfo.row_count > 0;
 
-                        let cardBorder = '#e2e8f0';
+                        let cardBorder = 'var(--theme-border)';
                         let cardBg = 'white';
                         let iconEmoji = '📋';
 
@@ -1948,17 +1948,17 @@
                             <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
                                 <span style="font-size: 2rem; line-height: 1;">${iconEmoji}</span>
                                 <div style="flex: 1;">
-                                    <strong style="color: #1e293b; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">${tableName}</strong>
-                                    <div style="font-size: 0.75rem; color: #64748b;">${tableInfo.column_count} columns</div>
+                                    <strong style="color: var(--theme-text); font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">${tableName}</strong>
+                                    <div style="font-size: 0.75rem; color: var(--theme-text-muted);">${tableInfo.column_count} columns</div>
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;">
-                                <div class="metric-circle" style="width: 50px; height: 50px; font-size: 1.1rem; ${isMainTable && hasData ? 'background: linear-gradient(135deg, #10b981, #059669);' : 'background: linear-gradient(135deg, #64748b, #475569);'}">
+                                <div class="metric-circle" style="width: 50px; height: 50px; font-size: 1.1rem; ${isMainTable && hasData ? 'background: linear-gradient(135deg, #10b981, #059669);' : 'background: linear-gradient(135deg, var(--theme-text-muted), var(--theme-text-muted));'}">
                                     ${tableInfo.row_count > 999 ? Math.floor(tableInfo.row_count / 1000) + 'k' : tableInfo.row_count}
                                 </div>
                                 <div style="flex: 1;">
-                                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Records</div>
-                                    <div style="font-weight: 600; color: #1e293b; font-size: 1.1rem;">${tableInfo.row_count.toLocaleString()}</div>
+                                    <div style="font-size: 0.8rem; color: var(--theme-text-muted); margin-bottom: 0.25rem;">Records</div>
+                                    <div style="font-weight: 600; color: var(--theme-text); font-size: 1.1rem;">${tableInfo.row_count.toLocaleString()}</div>
                                 </div>
                             </div>
                             ${isMainTable ? `
@@ -2483,5 +2483,4 @@
             setInterval(updateCurrentTime, 60000);
         });
     </script>
-</body>
-</html>
+{% endblock %}

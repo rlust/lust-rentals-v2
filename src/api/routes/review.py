@@ -12,7 +12,6 @@ from src.api.dependencies import get_config, get_review_manager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-CONFIG = get_config()
 
 
 # ============================================================================
@@ -21,13 +20,25 @@ CONFIG = get_config()
 
 class IncomeOverrideRequest(BaseModel):
     """Request to override income transaction mapping."""
-    transaction_id: str
     property_name: str
     mapping_notes: Optional[str] = None
 
 
 class ExpenseOverrideRequest(BaseModel):
     """Request to override expense transaction category."""
+    category: str
+    property_name: Optional[str] = None
+
+
+class IncomeOverrideItem(BaseModel):
+    """Bulk override item for income transactions."""
+    transaction_id: str
+    property_name: str
+    mapping_notes: Optional[str] = None
+
+
+class ExpenseOverrideItem(BaseModel):
+    """Bulk override item for expense transactions."""
     transaction_id: str
     category: str
     property_name: Optional[str] = None
@@ -35,12 +46,12 @@ class ExpenseOverrideRequest(BaseModel):
 
 class BulkIncomeOverrideRequest(BaseModel):
     """Request to bulk update income mappings."""
-    updates: List[IncomeOverrideRequest]
+    updates: List[IncomeOverrideItem]
 
 
 class BulkExpenseOverrideRequest(BaseModel):
     """Request to bulk update expense categories."""
-    updates: List[ExpenseOverrideRequest]
+    updates: List[ExpenseOverrideItem]
 
 
 class ExpenseUpdateRequest(BaseModel):
@@ -84,7 +95,7 @@ def get_income_for_review(http_request: Request) -> list:
     Returns income transactions that need property assignment, sorted by date.
     Only returns unmapped or manually reviewed items.
     """
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         raise HTTPException(
@@ -122,7 +133,7 @@ def get_expenses_for_review(http_request: Request) -> list:
     Returns expense transactions that need category assignment, sorted by date.
     Prioritizes low-confidence and uncategorized items.
     """
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         raise HTTPException(
@@ -135,17 +146,32 @@ def get_expenses_for_review(http_request: Request) -> list:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-            # Get expense items needing review (low confidence or uncategorized)
+            review_manager = get_review_manager()
+            cursor.execute(f"ATTACH DATABASE '{review_manager.overrides_db_path}' AS overrides_db")
+
+            # Get expense items needing review (low confidence or uncategorized, excluding overrides)
             cursor.execute("""
-                SELECT *
-                FROM processed_expenses
-                WHERE confidence < 0.6
-                   OR category = 'other'
-                   OR category IS NULL
-                ORDER BY confidence ASC, date DESC
+                SELECT
+                    pe.*,
+                    COALESCE(eo.category, pe.category) as category,
+                    COALESCE(eo.property_name, pe.property_name) as property_name,
+                    CASE
+                        WHEN eo.transaction_id IS NOT NULL THEN 'overridden'
+                        ELSE pe.category_status
+                    END as category_status
+                FROM processed_expenses pe
+                LEFT JOIN overrides_db.expense_overrides eo ON pe.transaction_id = eo.transaction_id
+                WHERE eo.transaction_id IS NULL
+                  AND (
+                    pe.confidence < 0.6
+                    OR pe.category = 'other'
+                    OR pe.category IS NULL
+                  )
+                ORDER BY pe.confidence ASC, pe.date DESC
             """)
 
             rows = cursor.fetchall()
+            cursor.execute("DETACH DATABASE overrides_db")
             return [dict(row) for row in rows]
 
     except sqlite3.Error as e:
@@ -178,7 +204,7 @@ def update_income_override(
                     mapping_notes = excluded.mapping_notes,
                     updated_at = CURRENT_TIMESTAMP,
                     modified_by = 'web_user'
-            """, (override.transaction_id, override.property_name, override.mapping_notes))
+            """, (transaction_id, override.property_name, override.mapping_notes))
 
             conn.commit()
 
@@ -215,7 +241,7 @@ def update_expense_override(
                     property_name = excluded.property_name,
                     updated_at = CURRENT_TIMESTAMP,
                     modified_by = 'web_user'
-            """, (override.transaction_id, override.category, override.property_name))
+            """, (transaction_id, override.category, override.property_name))
 
             conn.commit()
 
@@ -242,6 +268,10 @@ def bulk_update_income_overrides(
             for idx, override in enumerate(request.updates, 1):
                 try:
                     # Validate required fields
+                    if not override.transaction_id or str(override.transaction_id).strip() == '':
+                        error_msg = f"Missing transaction_id for bulk income update (item {idx}/{len(request.updates)})"
+                        logger.error(f"Validation error in bulk income update (item {idx}/{len(request.updates)}): {error_msg}")
+                        raise HTTPException(status_code=400, detail=f"Validation error: {error_msg}")
                     if not override.property_name or override.property_name.strip() == '':
                         error_msg = f"Transaction {override.transaction_id}: property_name is required"
                         logger.error(f"Validation error in bulk income update (item {idx}/{len(request.updates)}): {error_msg}")
@@ -302,6 +332,10 @@ def bulk_update_expense_overrides(
             for idx, override in enumerate(request.updates, 1):
                 try:
                     # Validate required fields before database operation
+                    if not override.transaction_id or str(override.transaction_id).strip() == '':
+                        error_msg = f"Missing transaction_id for bulk expense update (item {idx}/{len(request.updates)})"
+                        logger.error(f"Validation error in bulk expense update (item {idx}/{len(request.updates)}): {error_msg}")
+                        raise HTTPException(status_code=400, detail=f"Validation error: {error_msg}")
                     if not override.category or override.category.strip() == '':
                         error_msg = f"Transaction {override.transaction_id}: category is required but was empty"
                         logger.error(f"Validation error in bulk expense update (item {idx}/{len(request.updates)}): {error_msg}")
@@ -359,7 +393,7 @@ def get_available_properties(http_request: Request) -> list:
     with business entity (LLC) listed first, followed by rental properties.
     Falls back to hardcoded defaults if properties table doesn't exist.
     """
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         # Return hardcoded defaults as fallback
@@ -484,8 +518,9 @@ def get_all_income(
     Pagination: Use page and limit parameters. Set limit=0 for all records (backward compatible).
     Search: Filter by description or property name.
     """
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
     review_manager = get_review_manager()
+    rules_db_path = get_config().data_dir / "overrides" / "rules.db"
 
     if not db_path.exists():
         raise HTTPException(
@@ -500,6 +535,7 @@ def get_all_income(
 
             # Attach the overrides database to access override data
             cursor.execute(f"ATTACH DATABASE '{review_manager.overrides_db_path}' AS overrides_db")
+            cursor.execute(f"ATTACH DATABASE '{rules_db_path}' AS rules_db")
 
             # Build WHERE clause for filters
             where_conditions = []
@@ -517,6 +553,20 @@ def get_all_income(
                 params.append(property_filter)
 
             where_clause = f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
+
+            cursor.execute(
+                """
+                SELECT name FROM rules_db.sqlite_master
+                WHERE type='table' AND name='categorization_rules'
+                """
+            )
+            has_rules_table = cursor.fetchone() is not None
+            rules_join = "LEFT JOIN rules_db.categorization_rules cr ON io.transaction_id = cr.id" if has_rules_table else ""
+            rule_name_select = (
+                "CASE WHEN cr.action_type IS NOT NULL then cr.name ELSE '' END as rule_name"
+                if has_rules_table
+                else "'' as rule_name"
+            )
 
             # Get total count
             count_query = f"""
@@ -545,16 +595,13 @@ def get_all_income(
                     pi.transaction_id,
                     COALESCE(io.property_name, pi.property_name) as property_name,
                     io.mapping_notes as mapping_notes,
-                    CASE
-                        WHEN cr.action_type IS NOT NULL then cr.name
-                        ELSE ''
-                    END as rule_name,
+                    {rule_name_select},
                     pi.created_at,
                     pi.updated_at,
-                    pi.modified_by,
-                     cr.name as rule_name
+                    pi.modified_by
                 FROM processed_income pi
-                LEFT JOIN overrides_db.income_overrides io ON pi.transaction_id = io.transaction_id LEFT JOIN overrides_db.categorization_rules cr ON io.transaction_id = cr.id 
+                LEFT JOIN overrides_db.income_overrides io ON pi.transaction_id = io.transaction_id
+                {rules_join}
                 {where_clause}
                 ORDER BY pi.date DESC
             """
@@ -569,6 +616,7 @@ def get_all_income(
 
             # Detach the overrides database
             cursor.execute("DETACH DATABASE overrides_db")
+            cursor.execute("DETACH DATABASE rules_db")
 
             data = [dict(row) for row in rows]
             actual_limit = limit if limit > 0 else total_count
@@ -604,7 +652,7 @@ def get_all_expenses(
     Pagination: Use page and limit parameters. Set limit=0 for all records (backward compatible).
     Search: Filter by description, category, or property name.
     """
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
     review_manager = get_review_manager()
 
     if not db_path.exists():
@@ -715,7 +763,7 @@ def get_all_expenses(
 @router.delete("/expense/{transaction_id}")
 def delete_expense(transaction_id: str, http_request: Request) -> dict:
     """Delete an expense transaction."""
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
     review_manager = get_review_manager()
 
     try:
@@ -741,7 +789,7 @@ def delete_expense(transaction_id: str, http_request: Request) -> dict:
 @router.delete("/income/{transaction_id}")
 def delete_income(transaction_id: str, http_request: Request) -> dict:
     """Delete an income transaction."""
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
     review_manager = get_review_manager()
 
     try:
@@ -771,7 +819,7 @@ def update_expense(
     http_request: Request
 ) -> dict:
     """Update a full expense transaction."""
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
     review_manager = get_review_manager()
 
     # Validate required fields
@@ -824,7 +872,7 @@ def update_income(
     http_request: Request
 ) -> dict:
     """Update a full income transaction."""
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
     review_manager = get_review_manager()
 
     # Validate required fields

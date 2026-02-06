@@ -107,6 +107,18 @@ def transactions_ui(request: Request):
     return templates.TemplateResponse("transactions.html", {"request": request})
 
 
+@app.get("/reports", response_class=HTMLResponse)
+def reports_ui(request: Request):
+    """Render the reports landing page."""
+    return templates.TemplateResponse("reports.html", {"request": request})
+
+
+@app.get("/backup", response_class=HTMLResponse)
+def backup_ui(request: Request):
+    """Render the backups landing page."""
+    return templates.TemplateResponse("backup.html", {"request": request})
+
+
 @app.get("/dashboard-v2", response_class=HTMLResponse)
 def dashboard_v2_redirect(request: Request):
     """Redirect legacy dashboard link to root."""

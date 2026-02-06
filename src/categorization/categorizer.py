@@ -336,12 +336,12 @@ class EnhancedCategorizer:
                 "amount": str(amount),
                 "payee": payee
             }
-            cat_rule, prop_rule, rule_name = self.rule_evaluator.evaluate_transaction(tx_data)
-            
-            if cat_rule:
-                return (cat_rule, 1.0, f"Matched rule: {rule_name}")
-            # Note: Property assignment from rules is handled separately in the processor,
-            # but if a rule sets a category, we return it here.
+            actions, rule_name = self.rule_evaluator.evaluate_transaction(tx_data)
+
+            for action in actions:
+                if action.get("type") == "set_category":
+                    return (action.get("value", ""), 1.0, f"Matched rule: {rule_name}")
+            # Note: Property assignment from rules is handled separately in the processor.
 
         # Strategy 1: Merchant database (highest confidence)
         result = self._match_merchant(combined_text)

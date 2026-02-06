@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Backups - Lust Rentals{% endblock %}
+{% block head_extra %}
+    <style>
+        :root {
+            --primary: var(--theme-accent);
+            --secondary: var(--theme-success);
+            --dark: var(--theme-text);
+            --gray: var(--theme-text-muted);
+            --light-gray: var(--theme-surface-muted);
+            --white: var(--theme-surface);
+            --shadow: var(--theme-shadow-lg);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--theme-bg);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            color: var(--dark);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .page-header p {
+            color: var(--gray);
+            margin-top: 0.5rem;
+        }
+
+        .backup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .backup-card {
+            background: var(--white);
+            padding: 1.75rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .backup-card h2 {
+            color: var(--dark);
+            font-size: 1.25rem;
+        }
+
+        .backup-card p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        .backup-card a {
+            margin-top: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container">
+
+        <section class="page-header">
+            <h1>&#128190; Backups</h1>
+            <p>Manage exports and backups from the dashboard or via the API endpoints.</p>
+        </section>
+
+        <section class="backup-grid">
+            <article class="backup-card">
+                <h2>Create Backup</h2>
+                <p>Generate a full backup of processed data and reports.</p>
+                <a href="/">Open Dashboard &#8594;</a>
+            </article>
+            <article class="backup-card">
+                <h2>Export for Accountant</h2>
+                <p>Create packaged exports for your accounting workflows.</p>
+                <a href="/">Open Dashboard &#8594;</a>
+            </article>
+            <article class="backup-card">
+                <h2>Restore</h2>
+                <p>Review available backups and restore data safely.</p>
+                <a href="/docs">Open Docs &#8594;</a>
+            </article>
+        </section>
+    </div>
+{% endblock %}

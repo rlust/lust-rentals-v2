@@ -1,36 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automation Rules - Lust Rentals</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/components.css">
+{% extends "base.html" %}
+{% block title %}Automation Rules - Lust Rentals{% endblock %}
+{% block head_extra %}
     <style>
-        /* Dark Mode Styles - Consistent with components.css */
+        /* Theme-aware styles */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #000000;
-            color: #ffffff;
+            background: var(--bg-app);
+            color: var(--text-primary);
             min-height: 100vh;
             padding: 2rem;
         }
         .container { max-width: 1400px; margin: 0 auto; }
         .header {
-            background: #1c1c1e; 
-            border: 1px solid #38383a;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             padding: 2rem; border-radius: 14px;
             margin-bottom: 2rem;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .header h1 { color: #ffffff; }
-        .header p { color: #8e8e93; }
+        .header h1 { color: var(--text-primary); }
+        .header p { color: var(--text-secondary); }
         
         .content {
-            background: #1c1c1e; 
-            border: 1px solid #38383a;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             padding: 2rem; border-radius: 14px;
         }
         .btn {
@@ -39,23 +34,45 @@
             display: inline-flex; align-items: center; gap: 0.5rem;
             color: white;
         }
-        .btn-primary { background: #0a84ff; }
-        .btn-success { background: #30d158; }
-        .btn-danger { background: #ff453a; }
+        .btn-primary { background: var(--primary); }
+        .btn-success { background: var(--secondary); }
+        .btn-danger { background: var(--danger); }
         .btn-small { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #38383a; color: #ffffff; }
-        th { background: #2c2c2e; font-weight: 600; color: #8e8e93; text-transform: uppercase; font-size: 0.8rem; }
-        td code { background: #2c2c2e; padding: 0.2rem 0.5rem; border-radius: 4px; color: #ff9f0a; }
-        td b { color: #30d158; }
-        td strong { color: #ffffff; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+        th { background: var(--bg-card-hover); font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.8rem; }
+        td code { background: var(--bg-card-hover); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--warning); }
+        td b { color: var(--secondary); }
+        td strong { color: var(--text-primary); }
         
         .badge {
             padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;
         }
-        .badge-cat { background: rgba(10, 132, 255, 0.2); color: #0a84ff; border: 1px solid rgba(10, 132, 255, 0.3); }
-        .badge-prop { background: rgba(48, 209, 88, 0.2); color: #30d158; border: 1px solid rgba(48, 209, 88, 0.3); }
+        .badge-cat { background: rgba(59, 130, 246, 0.2); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.35); }
+        .badge-prop { background: rgba(34, 197, 94, 0.2); color: var(--secondary); border: 1px solid rgba(34, 197, 94, 0.35); }
+        .badge-multi { background: rgba(251, 191, 36, 0.2); color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.35); }
+
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .action-row button {
+            padding: 0.4rem 0.6rem;
+        }
+        .action-lines {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .action-line {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
         
         /* Modal */
         .modal {
@@ -65,45 +82,30 @@
         }
         .modal.show { display: flex; }
         .modal-content {
-            background: #1c1c1e; 
-            border: 1px solid #38383a;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             padding: 2rem; border-radius: 14px;
             width: 500px; max-width: 90%;
-            color: #ffffff;
+            color: var(--text-primary);
         }
-        .modal-content h2 { color: #ffffff; }
+        .modal-content h2 { color: var(--text-primary); }
         .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #8e8e93; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-secondary); }
         .form-group input, .form-group select {
             width: 100%; padding: 0.75rem; 
-            border: 1px solid #38383a;
+            border: 1px solid var(--border-color);
             border-radius: 10px;
-            background: #000000;
-            color: #ffffff;
+            background: var(--bg-input);
+            color: var(--text-primary);
         }
         .form-group input:focus, .form-group select:focus {
             outline: none;
-            border-color: #0a84ff;
+            border-color: var(--primary);
         }
     </style>
-</head>
-<body>
+{% endblock %}
+{% block content %}
     <div class="container">
-        <!-- Global Navigation would go here, omitting for brevity in this snippet -->
-        <nav class="global-nav" id="globalNav">
-            <div class="nav-header">
-                <a href="/dashboard-v2" class="nav-brand">
-                    <span class="nav-brand-icon">&#127969;</span>
-                    <span class="nav-brand-text">Lust Rentals</span>
-                </a>
-            </div>
-            <div class="nav-menu">
-                <a href="/dashboard-v2" class="nav-link">Dashboard</a>
-                <a href="/review-enhanced" class="nav-link">Review</a>
-                <a href="/properties-ui" class="nav-link">Properties</a>
-                <a href="/rules-ui" class="nav-link active">Rules</a>
-            </div>
-        </nav>
 
         <div class="header">
             <div>
@@ -170,20 +172,17 @@
                 <div style="border-top: 1px solid #eee; margin: 1.5rem 0;"></div>
 
                 <div class="form-group">
-                    <label>Then Set Action...</label>
-                    <select id="action-type" onchange="toggleActionValue()">
-                        <option value="set_category">Set Category</option>
-                        <option value="set_property">Set Property</option>
-                    </select>
+                    <label>Then Apply Actions...</label>
+                    <div id="actions-container"></div>
+                    <button type="button" class="btn btn-small btn-primary" onclick="addActionRow()">+ Add Action</button>
                 </div>
 
-                <div class="form-group">
-                    <label>To Value</label>
-                    <input type="text" id="action-value" required list="categories-list">
-                    <datalist id="categories-list">
-                        <!-- Populated via JS -->
-                    </datalist>
-                </div>
+                <datalist id="categories-list">
+                    <!-- Populated via JS -->
+                </datalist>
+                <datalist id="properties-list">
+                    <!-- Populated via JS -->
+                </datalist>
 
                 <div class="form-group">
                     <label>Priority (Higher runs first)</label>
@@ -198,6 +197,8 @@
         </div>
     </div>
 
+{% endblock %}
+{% block scripts %}
     <script>
         const API_BASE = window.location.origin;
         let rules = [];
@@ -222,20 +223,20 @@
         }
 
         function updateDataList() {
-            const list = document.getElementById('categories-list');
-            list.innerHTML = '';
-            const actionType = document.getElementById('action-type').value;
-            const items = actionType === 'set_category' ? categories : properties;
-            items.forEach(item => {
+            const categoriesList = document.getElementById('categories-list');
+            const propertiesList = document.getElementById('properties-list');
+            categoriesList.innerHTML = '';
+            propertiesList.innerHTML = '';
+            categories.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item;
-                list.appendChild(option);
+                categoriesList.appendChild(option);
             });
-        }
-
-        function toggleActionValue() {
-            updateDataList();
-            document.getElementById('action-value').value = '';
+            properties.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                propertiesList.appendChild(option);
+            });
         }
 
         async function loadRules() {
@@ -250,12 +251,7 @@
                 <tr>
                     <td><strong>${rule.name}</strong></td>
                     <td>If <code>${rule.criteria_field}</code> ${rule.criteria_match_type} "<b>${rule.criteria_value}</b>"</td>
-                    <td>
-                        <span class="badge ${rule.action_type === 'set_category' ? 'badge-cat' : 'badge-prop'}">
-                            ${rule.action_type === 'set_category' ? 'Category' : 'Property'}
-                        </span>
-                        = ${rule.action_value}
-                    </td>
+                    <td>${renderActions(rule)}</td>
                     <td>${rule.priority}</td>
                     <td>${rule.is_active ? '✅' : '❌'}</td>
                     <td>
@@ -272,6 +268,7 @@
             document.getElementById('rule-form').reset();
             document.getElementById('rule-modal').classList.add('show');
             updateDataList();
+            resetActions();
         }
 
         function closeModal() {
@@ -286,22 +283,26 @@
             document.getElementById('criteria-field').value = rule.criteria_field;
             document.getElementById('criteria-match-type').value = rule.criteria_match_type;
             document.getElementById('criteria-value').value = rule.criteria_value;
-            document.getElementById('action-type').value = rule.action_type;
-            toggleActionValue(); 
-            document.getElementById('action-value').value = rule.action_value;
+            resetActions(rule);
             document.getElementById('rule-priority').value = rule.priority;
             document.getElementById('rule-modal').classList.add('show');
         }
 
         async function saveRule(e) {
             e.preventDefault();
+            const actions = collectActions();
+            if (actions.length === 0) {
+                alert('Please add at least one action.');
+                return;
+            }
+
             const data = {
                 name: document.getElementById('rule-name').value,
                 criteria_field: document.getElementById('criteria-field').value,
                 criteria_match_type: document.getElementById('criteria-match-type').value,
                 criteria_value: document.getElementById('criteria-value').value,
-                action_type: document.getElementById('action-type').value,
-                action_value: document.getElementById('action-value').value,
+                action_type: actions.length > 1 ? 'multi' : actions[0].type,
+                action_value: actions.length > 1 ? actions : actions[0].value,
                 priority: parseInt(document.getElementById('rule-priority').value)
             };
 
@@ -331,6 +332,89 @@
             await fetch(`${API_BASE}/rules/${id}`, { method: 'DELETE' });
             loadRules();
         }
+
+        function parseActions(rule) {
+            if (Array.isArray(rule.action_value)) {
+                return rule.action_value;
+            }
+            if (typeof rule.action_value === 'string' && rule.action_value.trim().startsWith('[')) {
+                try {
+                    const parsed = JSON.parse(rule.action_value);
+                    if (Array.isArray(parsed)) return parsed;
+                } catch (e) {}
+            }
+            if (rule.action_type && rule.action_value) {
+                return [{ type: rule.action_type, value: rule.action_value }];
+            }
+            return [];
+        }
+
+        function renderActions(rule) {
+            const actions = parseActions(rule);
+            if (!actions.length) return '';
+            return `
+                <div class="action-lines">
+                    ${actions.map(action => `
+                        <div class="action-line">
+                            <span class="badge ${action.type === 'set_category' ? 'badge-cat' : action.type === 'set_property' ? 'badge-prop' : 'badge-multi'}">
+                                ${action.type === 'set_category' ? 'Category' : action.type === 'set_property' ? 'Property' : action.type}
+                            </span>
+                            = ${action.value}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function resetActions(rule = null) {
+            const container = document.getElementById('actions-container');
+            container.innerHTML = '';
+            const actions = rule ? parseActions(rule) : [{ type: 'set_category', value: '' }];
+            actions.forEach(action => addActionRow(action));
+        }
+
+        function addActionRow(action = { type: 'set_category', value: '' }) {
+            const container = document.getElementById('actions-container');
+            const row = document.createElement('div');
+            row.className = 'action-row';
+
+            const typeSelect = document.createElement('select');
+            typeSelect.innerHTML = `
+                <option value="set_category">Set Category</option>
+                <option value="set_property">Set Property</option>
+            `;
+            typeSelect.value = action.type || 'set_category';
+
+            const valueInput = document.createElement('input');
+            valueInput.type = 'text';
+            valueInput.required = true;
+            valueInput.value = action.value || '';
+            valueInput.setAttribute('list', typeSelect.value === 'set_category' ? 'categories-list' : 'properties-list');
+
+            typeSelect.addEventListener('change', () => {
+                valueInput.value = '';
+                valueInput.setAttribute('list', typeSelect.value === 'set_category' ? 'categories-list' : 'properties-list');
+            });
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'btn btn-small btn-danger';
+            removeButton.textContent = 'Remove';
+            removeButton.onclick = () => row.remove();
+
+            row.appendChild(typeSelect);
+            row.appendChild(valueInput);
+            row.appendChild(removeButton);
+            container.appendChild(row);
+        }
+
+        function collectActions() {
+            const container = document.getElementById('actions-container');
+            const rows = Array.from(container.querySelectorAll('.action-row'));
+            return rows.map(row => {
+                const [typeSelect, valueInput] = row.querySelectorAll('select, input');
+                return { type: typeSelect.value, value: valueInput.value.trim() };
+            }).filter(action => action.value);
+        }
     </script>
-</body>
-</html>
+{% endblock %}

@@ -13,7 +13,6 @@ from src.api.dependencies import get_config
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-CONFIG = get_config()
 
 
 # ============================================================================
@@ -69,7 +68,7 @@ def list_properties(
         include_inactive: Include inactive properties in results
         property_type: Filter by type ('rental' or 'business_entity')
     """
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         return []
@@ -122,7 +121,7 @@ def list_properties(
 @router.get("/{property_id}", response_model=PropertyResponse)
 def get_property(http_request: Request, property_id: int) -> PropertyResponse:
     """Get a single property by ID."""
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         raise HTTPException(status_code=404, detail="Database not found")
@@ -161,7 +160,7 @@ def create_property(
     property_data: PropertyCreate
 ) -> PropertyResponse:
     """Create a new property."""
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         raise HTTPException(status_code=404, detail="Database not found")
@@ -235,7 +234,7 @@ def update_property(
     property_data: PropertyUpdate
 ) -> PropertyResponse:
     """Update an existing property."""
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         raise HTTPException(status_code=404, detail="Database not found")
@@ -345,7 +344,7 @@ def delete_property(http_request: Request, property_id: int) -> dict:
 
     Properties are never hard-deleted to preserve historical data integrity.
     """
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         raise HTTPException(status_code=404, detail="Database not found")
@@ -392,7 +391,7 @@ def initialize_properties(http_request: Request) -> dict:
 
     This endpoint is idempotent - running it multiple times is safe.
     """
-    db_path = CONFIG.data_dir / "processed" / "processed.db"
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
     if not db_path.exists():
         raise HTTPException(status_code=404, detail="Database not found")

@@ -102,6 +102,24 @@ def review_enhanced(request: Request):
     return templates.TemplateResponse("review_v3.html", {"request": request})
 
 
+@app.get("/transactions", response_class=HTMLResponse)
+def transactions_ui(request: Request):
+    """Render the transactions management UI."""
+    return templates.TemplateResponse("transactions.html", {"request": request})
+
+
+@app.get("/reports", response_class=HTMLResponse)
+def reports_ui(request: Request):
+    """Render the reports landing page."""
+    return templates.TemplateResponse("reports.html", {"request": request})
+
+
+@app.get("/backup", response_class=HTMLResponse)
+def backup_ui(request: Request):
+    """Render the backups landing page."""
+    return templates.TemplateResponse("backup.html", {"request": request})
+
+
 @app.get("/health")
 def healthcheck() -> dict[str, str]:
     """Service liveness probe."""

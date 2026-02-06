@@ -15,7 +15,6 @@ from src.api.models import ReportRequest
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-CONFIG = get_config()
 
 # Report artifacts metadata
 REPORT_ARTIFACTS = {
@@ -85,7 +84,16 @@ def generate_annual_report(http_request: Request, request: ReportRequest) -> dic
     """Generate annual summary metrics and optionally persist artifacts."""
 
     reporter = get_tax_reporter()
-    summary = reporter.generate_annual_summary(year=request.year, save_to_file=request.save_outputs)
+    try:
+        summary = reporter.generate_annual_summary(year=request.year, save_to_file=request.save_outputs)
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Source data not found. Please process your bank transactions first using "
+                "the 'Run processor' button. Error: " + str(e)
+            ),
+        ) from e
 
     return jsonable_encoder(summary)
 

@@ -1,7 +1,7 @@
 """Pydantic models for API request/response schemas."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -60,9 +60,15 @@ class RuleCreate(BaseModel):
     criteria_field: str  # 'description', 'memo', 'amount'
     criteria_match_type: str  # 'contains', 'starts_with', 'equals', 'regex'
     criteria_value: str
-    action_type: str  # 'set_category', 'set_property'
-    action_value: str
+    action_type: str  # 'set_category', 'set_property', 'multi'
+    action_value: Union[str, List["RuleAction"]]
     priority: int = 10
+
+
+class RuleAction(BaseModel):
+    """Action for a rule."""
+    type: str  # 'set_category', 'set_property'
+    value: str
 
 
 class RuleUpdate(BaseModel):
@@ -72,7 +78,7 @@ class RuleUpdate(BaseModel):
     criteria_match_type: Optional[str] = None
     criteria_value: Optional[str] = None
     action_type: Optional[str] = None
-    action_value: Optional[str] = None
+    action_value: Optional[Union[str, List[RuleAction]]] = None
     is_active: Optional[bool] = None
     priority: Optional[int] = None
 

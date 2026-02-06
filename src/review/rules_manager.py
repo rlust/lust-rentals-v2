@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 import re
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple
@@ -56,6 +57,7 @@ class RulesManager:
 
     def add_rule(self, rule: RuleCreate) -> RuleResponse:
         """Create a new rule."""
+        action_type, action_value = self._serialize_action_storage(rule.action_type, rule.action_value)
         query = """
             INSERT INTO categorization_rules 
             (name, criteria_field, criteria_match_type, criteria_value, action_type, action_value, priority)
@@ -64,7 +66,7 @@ class RulesManager:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(query, (
                 rule.name, rule.criteria_field, rule.criteria_match_type, 
-                rule.criteria_value, rule.action_type, rule.action_value, rule.priority
+                rule.criteria_value, action_type, action_value, rule.priority
             ))
             rule_id = cursor.lastrowid
             conn.commit()
@@ -88,6 +90,16 @@ class RulesManager:
         fields = update.dict(exclude_unset=True)
         if not fields:
             return self.get_rule(rule_id)
+
+        if "action_type" in fields or "action_value" in fields:
+            existing = self.get_rule(rule_id)
+            if not existing:
+                return None
+            action_type = fields.get("action_type", existing.action_type)
+            action_value = fields.get("action_value", existing.action_value)
+            stored_action_type, stored_action_value = self._serialize_action_storage(action_type, action_value)
+            fields["action_type"] = stored_action_type
+            fields["action_value"] = stored_action_value
 
         set_clause = ", ".join([f"{k} = ?" for k in fields.keys()])
         values = list(fields.values())
@@ -119,12 +131,12 @@ class RulesManager:
                 return self._row_to_rule(row)
         return None
 
-    def evaluate_transaction(self, transaction: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    def evaluate_transaction(self, transaction: Dict[str, Any]) -> Tuple[List[Dict[str, str]], Optional[str]]:
         """
         Evaluate a transaction against all active rules.
         
         Returns:
-            Tuple of (category, property_name, matched_rule_name)
+            Tuple of (actions, matched_rule_name)
         """
         rules = self.get_all_rules(active_only=True)
         
@@ -146,14 +158,14 @@ class RulesManager:
                     continue  # Skip invalid regex
 
             if match:
-                if rule.action_type == "set_category":
-                    return (rule.action_value, None, rule.name)
-                elif rule.action_type == "set_property":
-                    return (None, rule.action_value, rule.name)
+                actions = self._coerce_actions(rule.action_type, rule.action_value)
+                if actions:
+                    return (actions, rule.name)
         
-        return (None, None, None)
+        return ([], None)
 
     def _row_to_rule(self, row: sqlite3.Row) -> RuleResponse:
+        action_value = self._parse_action_value(row["action_value"])
         return RuleResponse(
             id=row["id"],
             name=row["name"],
@@ -161,7 +173,60 @@ class RulesManager:
             criteria_match_type=row["criteria_match_type"],
             criteria_value=row["criteria_value"],
             action_type=row["action_type"],
-            action_value=row["action_value"],
+            action_value=action_value,
             is_active=bool(row["is_active"]),
             priority=row["priority"]
         )
+
+    def _parse_action_value(self, action_value: str) -> Any:
+        if not isinstance(action_value, str):
+            return action_value
+        stripped = action_value.strip()
+        if stripped.startswith("["):
+            try:
+                loaded = json.loads(stripped)
+            except json.JSONDecodeError:
+                return action_value
+            if isinstance(loaded, list):
+                return self._normalize_action_list(loaded)
+        return action_value
+
+    def _normalize_action_list(self, actions: List[Any]) -> List[Dict[str, str]]:
+        normalized: List[Dict[str, str]] = []
+        for action in actions:
+            if hasattr(action, "model_dump"):
+                action = action.model_dump()
+            elif hasattr(action, "dict"):
+                action = action.dict()
+            if isinstance(action, dict):
+                action_type = str(action.get("type", "")).strip()
+                action_value = str(action.get("value", "")).strip()
+                if action_type:
+                    normalized.append({"type": action_type, "value": action_value})
+        return normalized
+
+    def _coerce_actions(self, action_type: Optional[str], action_value: Any) -> List[Dict[str, str]]:
+        if isinstance(action_value, list):
+            return self._normalize_action_list(action_value)
+        if isinstance(action_value, str):
+            stripped = action_value.strip()
+            if stripped.startswith("["):
+                try:
+                    loaded = json.loads(stripped)
+                except json.JSONDecodeError:
+                    loaded = None
+                if isinstance(loaded, list):
+                    return self._normalize_action_list(loaded)
+        if action_type and action_value is not None:
+            return [{"type": action_type, "value": str(action_value)}]
+        return []
+
+    def _serialize_action_storage(self, action_type: str, action_value: Any) -> Tuple[str, str]:
+        actions = self._coerce_actions(action_type, action_value)
+        if not actions:
+            return action_type, ""
+        if len(actions) == 1 and not isinstance(action_value, list):
+            action = actions[0]
+            return action.get("type", action_type), action.get("value", "")
+        stored_type = "multi" if len(actions) > 1 else actions[0].get("type", action_type)
+        return stored_type, json.dumps(actions)
