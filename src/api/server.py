@@ -12,14 +12,13 @@ from typing import Dict
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from src.api.dependencies import get_config, CONFIG
-from src.api.routes import processing, reports, exports, review, properties, backup
+from src.api.routes import processing, reports, exports, review, properties, backup, rules
 from src.utils.config import configure_logging
 
 logger = logging.getLogger(__name__)
@@ -32,11 +31,6 @@ app = FastAPI(title="Lust Rentals Tax Reporting API", version="0.1.0")
 
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
-
-# Setup static files serving
-static_dir = Path(__file__).resolve().parent / "static"
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Setup rate limiting
 limiter = Limiter(key_func=get_remote_address)
@@ -59,19 +53,28 @@ app.include_router(review.router, prefix="/review", tags=["Review & Categorizati
 # Property management routes handle: /properties (CRUD operations)
 app.include_router(properties.router, prefix="/properties", tags=["Property Management"])
 
+# Automation Rules routes handle: /rules (CRUD operations)
+app.include_router(rules.router, prefix="/rules", tags=["Automation Rules"])
+
 # Backup and export routes handle: /backup/* (backup, export, restore)
 app.include_router(backup.router, prefix="/backup", tags=["Backup & Export"])
+
+# NOTE: The following routers still need to be extracted from the old server.py:
+# - Review routes (/review/*) - ~12 endpoints
+# - Audit routes (/audit/*) - 2 endpoints
+# - System management routes (/system/*) - 4 endpoints
+#
+# For now, these are still in the old server.py. To complete the refactoring:
+# 1. Create src/api/routes/review.py
+# 2. Create src/api/routes/audit.py
+# 3. Create src/api/routes/system.py
+# 4. Register them here with app.include_router()
+# 5. Remove the old server.py
 
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
     """Render the modern V2 dashboard UI."""
-    return templates.TemplateResponse("dashboard_v2.html", {"request": request})
-
-
-@app.get("/dashboard-v2", response_class=HTMLResponse)
-def dashboard_v2(request: Request):
-    """Render the modern V2 dashboard UI (alternate URL)."""
     return templates.TemplateResponse("dashboard_v2.html", {"request": request})
 
 
@@ -87,6 +90,12 @@ def properties_management(request: Request):
     return templates.TemplateResponse("properties.html", {"request": request})
 
 
+@app.get("/rules-ui", response_class=HTMLResponse)
+def rules_management(request: Request):
+    """Render the automation rules management UI."""
+    return templates.TemplateResponse("rules.html", {"request": request})
+
+
 @app.get("/review-enhanced", response_class=HTMLResponse)
 def review_enhanced(request: Request):
     """Render the enhanced review UI with bulk operations and modern UX."""
@@ -94,9 +103,15 @@ def review_enhanced(request: Request):
 
 
 @app.get("/transactions", response_class=HTMLResponse)
-def transactions_manager(request: Request):
-    """Render the transaction management UI for full CRUD operations."""
+def transactions_ui(request: Request):
+    """Render the transactions management UI."""
     return templates.TemplateResponse("transactions.html", {"request": request})
+
+
+@app.get("/dashboard-v2", response_class=HTMLResponse)
+def dashboard_v2_redirect(request: Request):
+    """Redirect legacy dashboard link to root."""
+    return templates.TemplateResponse("dashboard_v2.html", {"request": request})
 
 
 @app.get("/health")

@@ -191,14 +191,7 @@ class FinancialDataProcessor:
         return mapping_df
 
     def clean_income_data(self, df: DataFrame) -> DataFrame:
-        """Clean and standardize income data.
-
-        Args:
-            df: Raw income data
-
-        Returns:
-            Cleaned income data
-        """
+        """Clean and standardize income data."""
         # Make a copy to avoid SettingWithCopyWarning
         df = df.copy()
 
@@ -216,6 +209,34 @@ class FinancialDataProcessor:
 
         # Drop rows with no amount
         df = df.dropna(subset=['amount'])
+
+        # Ensure property_name column exists
+        if 'property_name' not in df.columns:
+            df['property_name'] = pd.NA
+        df['property_name'] = df['property_name'].astype('object')
+
+        # Apply Automation Rules (Property Assignment)
+        if self.rules_manager:
+            for idx, row in df.iterrows():
+                # Skip if already assigned (e.g. via deposit mapping)
+                if pd.notna(row.get('property_name')) and row.get('property_name') != 'UNASSIGNED':
+                    continue
+
+                tx_data = {
+                    "description": row.get('description', ''),
+                    "memo": row.get('memo', ''),
+                    "amount": str(row.get('amount', 0.0)),
+                    "payee": row.get('payee', '')
+                }
+                _, prop_rule, rule_name = self.rules_manager.evaluate_transaction(tx_data)
+                
+                if prop_rule:
+                    df.at[idx, 'property_name'] = prop_rule
+                    # Initialize mapping_status if missing
+                    if 'mapping_status' not in df.columns:
+                        df['mapping_status'] = 'mapping_missing'
+                    df.at[idx, 'mapping_status'] = 'rule_applied'
+                    df.at[idx, 'mapping_notes'] = f"Rule: {rule_name}"
 
         return df
 
@@ -357,6 +378,12 @@ class FinancialDataProcessor:
         missing = required_columns.difference(normalized.columns)
         if missing:
             raise ValueError(f"Bank report missing required columns: {', '.join(sorted(missing))}")
+
+        # Ensure schema completeness by adding missing optional columns
+        optional_columns = ["account_number", "account_name", "code", "reference", "memo", "description"]
+        for col in optional_columns:
+            if col not in normalized.columns:
+                normalized[col] = pd.NA
 
         normalized["date"] = pd.to_datetime(normalized["date"], errors="coerce")
         normalized = normalized.dropna(subset=["date"])
@@ -504,6 +531,10 @@ class FinancialDataProcessor:
         cleaned_income.to_csv(self.processed_data_dir / "processed_income.csv", index=False)
         cleaned_expenses.to_csv(self.processed_data_dir / "processed_expenses.csv", index=False)
 
+        # Fix for potential missing column if no overrides/mappings applied
+        if "mapping_status" not in cleaned_income.columns:
+            cleaned_income["mapping_status"] = "mapping_missing"
+
         income_review_df = cleaned_income[~cleaned_income["mapping_status"].isin(["mapped", "overridden"])].copy()
         if not income_review_df.empty:
             income_review_path = self.processed_data_dir / "income_mapping_review.csv"
@@ -541,6 +572,19 @@ class FinancialDataProcessor:
 
         if income_df.empty and expense_df.empty:
             return
+
+        # Add metadata columns required by the API
+        from datetime import datetime
+        now = datetime.utcnow().isoformat()
+        
+        for df in [income_df, expense_df]:
+            if not df.empty:
+                # Add columns if they don't exist
+                for col in ['created_at', 'updated_at']:
+                    if col not in df.columns:
+                        df[col] = now
+                if 'modified_by' not in df.columns:
+                    df['modified_by'] = 'system'
 
         with sqlite3.connect(self.processed_db_path) as conn:
             income_df.to_sql("processed_income", conn, if_exists="replace", index=False)
