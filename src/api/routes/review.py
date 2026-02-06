@@ -544,16 +544,17 @@ def get_all_income(
                     pi.amount,
                     pi.transaction_id,
                     COALESCE(io.property_name, pi.property_name) as property_name,
-                    COALESCE(io.mapping_notes, pi.mapping_notes) as mapping_notes,
+                    io.mapping_notes as mapping_notes,
                     CASE
                         WHEN io.transaction_id IS NOT NULL THEN 'overridden'
                         ELSE pi.mapping_status
                     END as mapping_status,
                     pi.created_at,
                     pi.updated_at,
-                    pi.modified_by
+                    pi.modified_by,
+                     cr.name as rule_name
                 FROM processed_income pi
-                LEFT JOIN overrides_db.income_overrides io ON pi.transaction_id = io.transaction_id
+                LEFT JOIN overrides_db.income_overrides io ON pi.transaction_id = io.transaction_id LEFT JOIN overrides_db.categorization_rules cr ON io.transaction_id = cr.id 
                 {where_clause}
                 ORDER BY pi.date DESC
             """

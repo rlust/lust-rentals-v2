@@ -12,6 +12,7 @@ from typing import Dict
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -21,13 +22,11 @@ from src.api.dependencies import get_config, CONFIG
 from src.api.routes import processing, reports, exports, review, properties, backup, rules
 from src.utils.config import configure_logging
 
-logger = logging.getLogger(__name__)
-
-# Configure logging
-configure_logging(CONFIG.log_level)
-
 # Initialize FastAPI app
 app = FastAPI(title="Lust Rentals Tax Reporting API", version="0.1.0")
+
+# Mount static files
+app.mount("/static", StaticFiles(directory=str(Path(__file__).resolve().parent / "static")), name="static")
 
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
