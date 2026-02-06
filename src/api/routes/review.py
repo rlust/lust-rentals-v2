@@ -546,9 +546,9 @@ def get_all_income(
                     COALESCE(io.property_name, pi.property_name) as property_name,
                     io.mapping_notes as mapping_notes,
                     CASE
-                        WHEN io.transaction_id IS NOT NULL THEN 'overridden'
-                        ELSE pi.mapping_status
-                    END as mapping_status,
+                        WHEN cr.action_type IS NOT NULL then cr.name
+                        ELSE ''
+                    END as rule_name,
                     pi.created_at,
                     pi.updated_at,
                     pi.modified_by,
