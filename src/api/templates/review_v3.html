@@ -1900,7 +1900,7 @@
         async function saveChanges() {
             if (pendingChanges.size === 0) {
                 showToast('No changes to save', 'warning');
-                return;
+                return false;
             }
 
             const updates = Array.from(pendingChanges.values());
@@ -1928,7 +1928,7 @@
                     }
                 });
 
-                return;
+                return false;
             }
 
             // Log payload for debugging
@@ -1990,6 +1990,7 @@
                 pendingChanges.clear();
                 updateInstructionsProgress();
 
+                return true;
             } catch (error) {
                 hideProgress();
 
@@ -2006,6 +2007,8 @@
                     pendingChanges: Array.from(pendingChanges.values()),
                     currentTab: currentTab
                 });
+
+                return false;
             }
         }
 
@@ -2020,32 +2023,55 @@
 
             try {
                 // Save changes
-                await saveChanges();
+                const saved = await saveChanges();
+                if (!saved) {
+                    showAlert('⚠️ Save failed or no changes detected. Re-process canceled.', 'warning');
+                    return;
+                }
 
                 // Reprocess - get latest transaction file from API
                 showAlert('⏳ Re-processing transactions...', 'info');
 
                 const fileResponse = await fetch(`${API_BASE}/files/latest-transaction`);
                 if (!fileResponse.ok) {
-                    throw new Error('Could not find a valid transaction file. Please upload a file from the dashboard.');
+                    let fileError = 'Could not find a valid transaction file. Please upload a file from the dashboard.';
+                    try {
+                        const fileErrorData = await fileResponse.json();
+                        fileError = fileErrorData.detail || fileErrorData.message || fileError;
+                    } catch (e) {
+                        // Use default error message
+                    }
+                    throw new Error(fileError);
                 }
                 const fileData = await fileResponse.json();
+                const taxYear = fileData.recommended_year || getTaxYear();
 
                 const processResponse = await fetch(`${API_BASE}/process/bank`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ bank_file_path: fileData.file_path, year: 2025 })
+                    body: JSON.stringify({ bank_file_path: fileData.file_path, year: taxYear })
                 });
 
-                if (processResponse.ok) {
-                    const result = await processResponse.json();
-                    showAlert(
-                        `✅ Successfully re-processed! Income: ${result.income_count}, Expenses: ${result.expense_count}`,
-                        'success'
-                    );
-                } else {
-                    throw new Error('Failed to reprocess transactions');
+                if (!processResponse.ok) {
+                    let errorDetail = 'Failed to reprocess transactions';
+                    try {
+                        const errorData = await processResponse.json();
+                        errorDetail = errorData.detail || errorData.message || errorDetail;
+                    } catch (e) {
+                        try {
+                            errorDetail = await processResponse.text();
+                        } catch (e2) {
+                            // Use default error message
+                        }
+                    }
+                    throw new Error(errorDetail);
                 }
+
+                const result = await processResponse.json();
+                showAlert(
+                    `✅ Successfully re-processed! Income: ${result.income_rows}, Expenses: ${result.expense_rows}`,
+                    'success'
+                );
 
                 setTimeout(() => loadData(), 2000);
             } catch (error) {
@@ -2100,6 +2126,10 @@
 
         function formatCategory(cat) {
             return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function getTaxYear() {
+            return new Date().getFullYear() - 1;
         }
 
         function showLoading() {

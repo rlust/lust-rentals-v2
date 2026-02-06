@@ -66,15 +66,29 @@ class ReviewManager:
         if overrides.empty or income_df.empty:
             return income_df
 
+        if "mapping_notes" not in overrides.columns:
+            overrides["mapping_notes"] = pd.NA
+
         merged = income_df.merge(overrides, on="transaction_id", how="left", suffixes=("", "_override"))
+
+        if "property_name_override" not in merged.columns:
+            return income_df
 
         override_mask = merged["property_name_override"].notna()
 
         merged.loc[override_mask, "property_name"] = merged.loc[override_mask, "property_name_override"]
-        merged.loc[override_mask, "mapping_notes"] = merged.loc[override_mask, "mapping_notes_override"]
+        override_notes_col = None
+        if "mapping_notes_override" in merged.columns:
+            override_notes_col = "mapping_notes_override"
+        elif "mapping_notes" in overrides.columns and "mapping_notes" in merged.columns and "mapping_notes" not in income_df.columns:
+            override_notes_col = "mapping_notes"
+        if override_notes_col is not None:
+            merged.loc[override_mask, "mapping_notes"] = merged.loc[override_mask, override_notes_col]
         merged.loc[override_mask, "mapping_status"] = "overridden"
 
-        merged = merged.drop(columns=["property_name_override", "mapping_notes_override"])
+        merged = merged.drop(
+            columns=[col for col in ["property_name_override", "mapping_notes_override"] if col in merged.columns]
+        )
         return merged
 
     def apply_expense_overrides(self, expense_df: DataFrame) -> DataFrame:

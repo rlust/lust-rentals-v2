@@ -147,3 +147,51 @@ def test_excel_export_endpoint(api_client: TestClient) -> None:
     # Optionally verify it's a valid Excel file by checking the file signature
     # Excel files start with PK (ZIP signature)
     assert excel_response.content[:2] == b'PK'
+
+
+def test_save_and_reprocess_flow_uses_latest_csv(api_client: TestClient) -> None:
+    process_response = api_client.post("/process/bank", json={"year": 2025})
+    assert process_response.status_code == 200
+
+    data_dir = Path(os.environ["LUST_DATA_DIR"])
+    raw_dir = data_dir / "raw"
+
+    custom_csv = raw_dir / "custom_upload.csv"
+    copy_fixture(FIXTURE_DIR / "bank_transaction_sample.csv", custom_csv)
+    custom_csv.touch()
+
+    # Ensure the custom CSV is the most recent file
+    latest_mtime = max(p.stat().st_mtime for p in raw_dir.glob("*.csv"))
+    os.utime(custom_csv, (latest_mtime + 5, latest_mtime + 5))
+
+    # Save overrides to simulate review changes
+    review_expense = api_client.get("/review/expenses").json()
+    assert review_expense
+
+    response = api_client.post(
+        "/review/bulk/expenses",
+        json={
+            "updates": [
+                {
+                    "transaction_id": review_expense[0]["transaction_id"],
+                    "category": "manual_test",
+                    "property_name": "118 W Shields St",
+                }
+            ]
+        },
+    )
+    assert response.status_code == 200
+
+    latest_response = api_client.get("/files/latest-transaction")
+    assert latest_response.status_code == 200
+    latest_payload = latest_response.json()
+    assert latest_payload["file_path"].endswith("custom_upload.csv")
+
+    reprocess_response = api_client.post(
+        "/process/bank",
+        json={"bank_file_path": latest_payload["file_path"], "year": 2025},
+    )
+    assert reprocess_response.status_code == 200
+    reprocess_payload = reprocess_response.json()
+    assert reprocess_payload["income_rows"] == 3
+    assert reprocess_payload["expense_rows"] == 2

@@ -805,7 +805,7 @@
                 const processResult = await processResponse.json();
                 document.getElementById('upload-progress-bar').style.width = '100%';
 
-                showAlert('upload-alert', `✅ Successfully processed! Income: ${processResult.income_count}, Expenses: ${processResult.expense_count}`, 'success');
+                showAlert('upload-alert', `✅ Successfully processed! Income: ${processResult.income_rows}, Expenses: ${processResult.expense_rows}`, 'success');
 
                 // Reload stats
                 setTimeout(() => {
@@ -882,8 +882,8 @@
                 showAlert('upload-alert',
                     `✅ Successfully re-processed transactions!\n\n` +
                     `📊 Results:\n` +
-                    `• Income: ${processResult.income_count} transactions\n` +
-                    `• Expenses: ${processResult.expense_count} transactions\n\n` +
+                    `• Income: ${processResult.income_rows} transactions\n` +
+                    `• Expenses: ${processResult.expense_rows} transactions\n\n` +
                     `Using file: ${fileData.filename}\n\n` +
                     `Your review changes have been applied to all reports!`,
                     'success'

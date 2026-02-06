@@ -197,12 +197,63 @@ def get_latest_transaction_file() -> dict:
             detail="Raw data directory not found. Please upload a transaction file first."
         )
 
+    def normalize_header(header: str) -> str:
+        return header.strip().lower().replace(" ", "_").replace("/", "_").replace("-", "_")
+
+    def is_valid_bank_file(path: Path) -> bool:
+        try:
+            with open(path, "r", newline="") as handle:
+                reader = csv.reader(handle)
+                headers = next(reader, None)
+            if not headers:
+                return False
+            normalized = {normalize_header(col) for col in headers}
+            return {"date", "credit_amount", "debit_amount"}.issubset(normalized)
+        except Exception:
+            return False
+
+    def infer_years(path: Path, sample_rows: int = 500) -> list[int]:
+        try:
+            with open(path, "r", newline="") as handle:
+                reader = csv.reader(handle)
+                headers = next(reader, None)
+                if not headers:
+                    return []
+                normalized = [normalize_header(col) for col in headers]
+                if "date" not in normalized:
+                    return []
+                date_index = normalized.index("date")
+
+                years: set[int] = set()
+                for idx, row in enumerate(reader):
+                    if idx >= sample_rows:
+                        break
+                    if len(row) <= date_index:
+                        continue
+                    raw_value = row[date_index].strip()
+                    if not raw_value:
+                        continue
+                    for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%m/%d/%y"):
+                        try:
+                            parsed = datetime.strptime(raw_value, fmt)
+                            years.add(parsed.year)
+                            break
+                        except ValueError:
+                            continue
+                return sorted(years)
+        except Exception:
+            return []
+
     # Search for transaction files with known patterns
     patterns = ["transaction_report-*.csv", "transaction_report.csv", "bank_transactions.csv"]
-    candidates = []
+    pattern_candidates: list[Path] = []
 
     for pattern in patterns:
-        candidates.extend(raw_dir.glob(pattern))
+        pattern_candidates.extend(raw_dir.glob(pattern))
+
+    # Consider all CSVs, then filter by required headers to avoid false positives
+    all_csv = list(raw_dir.glob("*.csv"))
+    candidates = list({*pattern_candidates, *all_csv})
 
     if not candidates:
         raise HTTPException(
@@ -210,14 +261,29 @@ def get_latest_transaction_file() -> dict:
             detail="No transaction files found. Please upload a transaction file from the dashboard."
         )
 
+    # Filter to valid bank files based on required headers
+    valid_candidates = [path for path in candidates if is_valid_bank_file(path)]
+    if not valid_candidates:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "No valid transaction files found. Expected headers include Date, Credit Amount, and Debit Amount. "
+                "Please upload a valid bank transaction CSV."
+            )
+        )
+
     # Return most recent by modification time
-    latest = max(candidates, key=lambda p: p.stat().st_mtime)
+    latest = max(valid_candidates, key=lambda p: p.stat().st_mtime)
+    detected_years = infer_years(latest)
+    recommended_year = max(detected_years) if detected_years else None
 
     return {
         "file_path": str(latest),
         "filename": latest.name,
         "modified_at": datetime.fromtimestamp(latest.stat().st_mtime).isoformat(),
-        "size_bytes": latest.stat().st_size
+        "size_bytes": latest.stat().st_size,
+        "detected_years": detected_years,
+        "recommended_year": recommended_year,
     }
 
 

@@ -215,6 +215,9 @@ class FinancialDataProcessor:
             df['property_name'] = pd.NA
         df['property_name'] = df['property_name'].astype('object')
 
+        if 'mapping_notes' not in df.columns:
+            df['mapping_notes'] = pd.NA
+
         # Apply Automation Rules (Property Assignment)
         if self.rules_manager:
             for idx, row in df.iterrows():

@@ -947,7 +947,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         bank_file_path: fileData.file_path,
-                        year: 2025
+                        year: getTaxYear()
                     })
                 });
 
@@ -1053,6 +1053,10 @@
         // Utility functions
         function formatDate(dateStr) {
             return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function getTaxYear() {
+            return new Date().getFullYear() - 1;
         }
 
         function formatCategory(cat) {
