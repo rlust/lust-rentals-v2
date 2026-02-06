@@ -1,0 +1,2487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Lust Rentals Review Dashboard</title>
+    <style>
+        /* Base & Typography */
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            margin: 2rem;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+        h1 {
+            color: #0f172a;
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        h2 {
+            color: #2563eb;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        h3 {
+            font-size: 1.1rem;
+            color: #334155;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Enhanced Sections */
+        .section {
+            background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Enhanced Metric Cards */
+        .card-grid {
+            display: grid;
+            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            border: 2px solid #bfdbfe;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #3b82f6;
+        }
+        .card:hover::before {
+            opacity: 1;
+        }
+        .card-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+            transition: transform 0.3s ease;
+        }
+        .card:hover .card-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .card-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1;
+        }
+        .card.status-ready {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #86efac;
+        }
+        .card.status-ready .card-value {
+            color: #15803d;
+        }
+        .card.status-pending {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-color: #fcd34d;
+        }
+        .card.status-pending .card-value {
+            color: #b45309;
+        }
+        .card.status-missing {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-color: #fca5a5;
+        }
+        .card.status-missing .card-value {
+            color: #dc2626;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            background: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 0.875rem;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        tbody tr:hover {
+            background-color: #f0f9ff;
+            transform: scale(1.005);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Buttons */
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Form Inputs */
+        input, select {
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            border: 2px solid #e2e8f0;
+            min-width: 10rem;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Enhanced Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .badge-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+        .badge-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        /* Enhanced Toast */
+        .toast {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #fff;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(-20px);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        .toast-icon {
+            font-size: 1.25rem;
+        }
+
+        /* Control Groups */
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .controls {
+            display: grid;
+            gap: 2rem;
+        }
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .control-group label {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #475569;
+            gap: 0.35rem;
+            font-weight: 600;
+        }
+
+        /* Export Log */
+        .export-log {
+            margin-top: 1rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            border: 1px solid #e2e8f0;
+        }
+        .export-log table {
+            margin: 0;
+            box-shadow: none;
+        }
+
+        /* Artifact Grid */
+        .artifact-grid {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .artifact-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+        .artifact-row:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transform: translateX(4px);
+        }
+        .artifact-row span {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .artifact-row small {
+            color: #64748b;
+            font-size: 0.75rem;
+        }
+
+        /* Empty State */
+        .empty {
+            font-style: italic;
+            color: #64748b;
+            margin: 2rem 0;
+            text-align: center;
+            padding: 3rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 0.75rem;
+            border: 2px dashed #cbd5e1;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .section {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Pulse Animation for Active States */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669, #047857);
+            border-radius: 999px;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        /* Status Badge Enhanced */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .status-badge:hover {
+            transform: scale(1.05);
+        }
+        .status-badge.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        .status-badge.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        .status-badge.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        .status-badge.info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        /* Enhanced Database Status Container */
+        .db-status-container {
+            margin-bottom: 2rem;
+            animation: fadeIn 0.6s ease-out;
+        }
+        .db-status-card {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 1rem;
+            border: 3px solid #bae6fd;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        .db-status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .db-status-card.ready {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-color: #6ee7b7;
+        }
+        .db-status-card.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #fcd34d;
+        }
+        .db-status-card.error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-color: #fca5a5;
+        }
+
+        /* Metric Visualization */
+        .metric-visual {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+        .metric-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Skeleton Loader */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 0.5rem;
+        }
+        .skeleton-text {
+            height: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .skeleton-card {
+            height: 120px;
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Enhanced Header with System Status -->
+    <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 2rem; border-radius: 1rem; margin-bottom: 2rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); color: white;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem;">
+            <div>
+                <h1 style="margin: 0 0 0.5rem 0; color: white; display: flex; align-items: center; gap: 0.75rem;">
+                    🏠 Lust Rentals
+                    <span style="font-size: 1rem; font-weight: 500; opacity: 0.9;">Tax Reporting Dashboard</span>
+                </h1>
+                <p style="margin: 0; opacity: 0.95; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; animation: pulse 2s infinite;"></span>
+                    System Online • Review & Generate Reports
+                </p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.25rem;">Current Session</div>
+                <div id="current-time" style="font-size: 1.25rem; font-weight: 600;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Toast Notification -->
+    <div id="toast" class="toast">
+        <span class="toast-icon" style="font-size: 1.5rem;">✓</span>
+        <div style="flex: 1;">
+            <div id="toast-message" style="font-weight: 600; font-size: 0.95rem;">Override saved</div>
+            <div id="toast-detail" style="font-size: 0.8rem; opacity: 0.9; margin-top: 0.25rem; display: none;"></div>
+        </div>
+        <button onclick="dismissToast()" style="background: transparent; border: none; color: white; font-size: 1.25rem; padding: 0; margin: 0; cursor: pointer; opacity: 0.8; min-width: auto; box-shadow: none;">×</button>
+    </div>
+
+    <!-- Quick Navigation Section -->
+    <div class="section" style="border: 3px solid #8b5cf6; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);">
+        <h2 style="color: #7c3aed;">🚀 Quick Navigation</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <a href="/review/mapped/dashboard" style="text-decoration: none; display: block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">✏️</div>
+                <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem;">Review Mapped Transactions</div>
+                <div style="opacity: 0.9; font-size: 0.875rem;">View and edit all mapped income and expense transactions. Export to Excel for bulk editing.</div>
+            </a>
+            <div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); padding: 1.5rem; border-radius: 0.75rem; border: 2px solid #e2e8f0;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
+                <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem; color: #1e293b;">Review Pending Items</div>
+                <div style="color: #64748b; font-size: 0.875rem;">Review unmapped deposits and uncategorized expenses below in this dashboard.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Import & Database Status Section -->
+    <div class="section" style="border: 3px solid #3b82f6;">
+        <h2 style="color: #3b82f6;">📥 Data Import &amp; Database Status</h2>
+
+        <!-- Enhanced Database Status Display -->
+        <div id="db-status-container" class="db-status-container">
+            <div id="db-status-card" class="db-status-card">
+                <div id="db-status-icon" style="font-size: 3.5rem; line-height: 1;">⏳</div>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 0.5rem 0; color: #0c4a6e; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>💾 Database Status</span>
+                        <span id="db-status-badge" class="status-badge info" style="font-size: 0.75rem;">Checking...</span>
+                    </h3>
+                    <p id="db-status-message" style="margin: 0 0 0.75rem 0; color: #475569; font-size: 1rem; line-height: 1.5;">Loading database status...</p>
+                    <div id="db-status-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="db-progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b; display: flex; justify-content: space-between;">
+                            <span id="db-progress-label">Checking database...</span>
+                            <span id="db-progress-percent">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="refreshDatabaseStatus()" class="pulse-ring" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); font-size: 1rem; padding: 0.75rem 1.5rem;">
+                    🔄 Refresh Status
+                </button>
+            </div>
+
+            <!-- Enhanced Table Information with Metrics -->
+            <div id="db-tables-info" style="margin-top: 1.5rem; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                    <h3 style="font-size: 1.1rem; margin: 0; color: #1e293b; display: flex; align-items: center; gap: 0.5rem;">
+                        📊 Database Tables & Metrics
+                    </h3>
+                    <div id="db-total-records" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 999px; border: 2px solid #bae6fd; font-weight: 600; color: #0c4a6e;">
+                        Total: <span id="db-total-count">0</span> records
+                    </div>
+                </div>
+                <div id="db-tables-grid" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));"></div>
+            </div>
+        </div>
+
+        <!-- Step-by-Step Import Process -->
+        <div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); padding: 1.5rem; border-radius: 0.75rem; border: 2px solid #fde047; margin-bottom: 2rem;">
+            <h3 style="margin-top: 0; color: #854d0e;">📖 Quick Start Guide</h3>
+            <ol style="margin: 0; padding-left: 1.5rem; line-height: 1.8;">
+                <li><strong>Upload Bank CSV</strong> - Upload your bank transaction export file below</li>
+                <li><strong>Process Transactions</strong> - Click "Run processor" to import data into database</li>
+                <li><strong>Review & Categorize</strong> - Scroll down to review income and expense mappings</li>
+                <li><strong>Generate Reports</strong> - Create Schedule E and Excel reports</li>
+            </ol>
+        </div>
+
+        <!-- File Upload Interface -->
+        <div style="margin-bottom: 1.5rem;">
+            <h3>Step 1: Upload Bank Transaction File</h3>
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1.5rem; background: white; border-radius: 0.75rem; border: 2px dashed #cbd5e1;">
+                <input type="file" id="bank-file-input" accept=".csv" style="flex: 1; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; background: #f8fafc;" onchange="handleFileSelect(event)">
+                <button onclick="uploadBankFile()" id="upload-btn" disabled style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); min-width: 150px;">📤 Upload File</button>
+            </div>
+            <div id="upload-status" style="margin-top: 0.75rem; padding: 0.75rem; border-radius: 0.5rem; display: none;"></div>
+        </div>
+
+        <!-- Process Transactions -->
+        <div>
+            <h3>Step 2: Process Transactions</h3>
+            <div class="control-group">
+                <label>
+                    Tax year
+                    <input type="number" id="import-process-year" placeholder="2025" />
+                </label>
+                <label>
+                    Uploaded file (auto-filled)
+                    <input type="text" id="import-bank-file" placeholder="Will be set after upload" readonly style="background: #f8fafc;" />
+                </label>
+                <button onclick="processUploadedFile()" id="process-uploaded-btn" disabled style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); font-size: 1.1rem; padding: 0.75rem 1.5rem;">▶️ Run Processor</button>
+            </div>
+            <div id="process-result" style="margin-top: 1rem; display: none;"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Pipeline &amp; Reports</h2>
+
+        <!-- Enhanced Status Summary Banner -->
+        <div style="background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%); padding: 1.5rem; border-radius: 0.75rem; border: 2px solid #93c5fd; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 1.1rem;">📋 Review Status</h3>
+                    <p style="margin: 0; color: #475569; font-size: 0.95rem;">
+                        {% if income_pending_count == 0 and expense_pending_count == 0 %}
+                        <span class="status-badge success">🎉 All items reviewed!</span>
+                        {% elif income_pending_count + expense_pending_count < 10 %}
+                        <span class="status-badge warning">⚡ Almost done!</span> <span style="margin-left: 0.5rem;">{{ income_pending_count + expense_pending_count }} items remaining</span>
+                        {% else %}
+                        <span class="status-badge info">📝 Review in progress</span> <span style="margin-left: 0.5rem;">{{ income_pending_count + expense_pending_count }} items to review</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">Overall Progress</div>
+                    <div style="font-size: 1.75rem; font-weight: 700; color: #1e40af;">
+                        {% set total_items = income_pending_count + expense_pending_count %}
+                        {% if total_items == 0 %}100{% else %}0{% endif %}%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <div class="card {% if income_pending_count > 0 %}status-pending{% else %}status-ready{% endif %}">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div class="card-icon">💰</div>
+                    <span class="status-badge {% if income_pending_count > 0 %}warning{% else %}success{% endif %}" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                        {% if income_pending_count > 0 %}Pending{% else %}Complete{% endif %}
+                    </span>
+                </div>
+                <span class="card-label">Income awaiting review</span>
+                <span class="card-value" id="income-count">{{ income_pending_count }}</span>
+                <div class="progress-bar" style="margin-top: 0.75rem; height: 6px;">
+                    <div class="progress-fill" style="width: {% if income_pending_count == 0 %}100{% else %}0{% endif %}%; background: linear-gradient(90deg, {% if income_pending_count == 0 %}#10b981, #059669{% else %}#f59e0b, #d97706{% endif %});"></div>
+                </div>
+            </div>
+            <div class="card {% if expense_pending_count > 0 %}status-pending{% else %}status-ready{% endif %}">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div class="card-icon">📝</div>
+                    <span class="status-badge {% if expense_pending_count > 0 %}warning{% else %}success{% endif %}" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                        {% if expense_pending_count > 0 %}Pending{% else %}Complete{% endif %}
+                    </span>
+                </div>
+                <span class="card-label">Expenses awaiting review</span>
+                <span class="card-value" id="expense-count">{{ expense_pending_count }}</span>
+                <div class="progress-bar" style="margin-top: 0.75rem; height: 6px;">
+                    <div class="progress-fill" style="width: {% if expense_pending_count == 0 %}100{% else %}0{% endif %}%; background: linear-gradient(90deg, {% if expense_pending_count == 0 %}#10b981, #059669{% else %}#f59e0b, #d97706{% endif %});"></div>
+                </div>
+            </div>
+            <div class="card {% if processed_status.income_csv %}status-ready{% else %}status-missing{% endif %}">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div class="card-icon">📄</div>
+                    <span class="status-badge {% if processed_status.income_csv %}success{% else %}error{% endif %}" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                        {% if processed_status.income_csv %}✓ Ready{% else %}✗ Missing{% endif %}
+                    </span>
+                </div>
+                <span class="card-label">Processed income CSV</span>
+                <span class="card-value">{{ 'Ready' if processed_status.income_csv else 'Missing' }}</span>
+                <div class="progress-bar" style="margin-top: 0.75rem; height: 6px;">
+                    <div class="progress-fill" style="width: {% if processed_status.income_csv %}100{% else %}0{% endif %}%; background: linear-gradient(90deg, {% if processed_status.income_csv %}#10b981, #059669{% else %}#ef4444, #dc2626{% endif %});"></div>
+                </div>
+            </div>
+            <div class="card {% if processed_status.expenses_csv %}status-ready{% else %}status-missing{% endif %}">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div class="card-icon">📋</div>
+                    <span class="status-badge {% if processed_status.expenses_csv %}success{% else %}error{% endif %}" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                        {% if processed_status.expenses_csv %}✓ Ready{% else %}✗ Missing{% endif %}
+                    </span>
+                </div>
+                <span class="card-label">Processed expenses CSV</span>
+                <span class="card-value">{{ 'Ready' if processed_status.expenses_csv else 'Missing' }}</span>
+                <div class="progress-bar" style="margin-top: 0.75rem; height: 6px;">
+                    <div class="progress-fill" style="width: {% if processed_status.expenses_csv %}100{% else %}0{% endif %}%; background: linear-gradient(90deg, {% if processed_status.expenses_csv %}#10b981, #059669{% else %}#ef4444, #dc2626{% endif %});"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div>
+                <h3>1. Process transactions</h3>
+                <div class="control-group">
+                    <label>
+                        Tax year
+                        <input type="number" id="process-year" placeholder="2025" />
+                    </label>
+                    <label>
+                        Bank file path (optional)
+                        <input type="text" id="process-bank-file" placeholder="auto-detect" />
+                    </label>
+                    <button onclick="triggerProcess()">Run processor</button>
+                </div>
+            </div>
+
+            <div>
+                <h3>2. Generate reports</h3>
+                <div class="control-group">
+                    <label>
+                        Tax year
+                        <input type="number" id="report-year" placeholder="{{ default_report_year }}" value="{{ default_report_year }}" />
+                    </label>
+                    <label style="flex-direction: row; align-items: center; gap: 0.5rem; text-transform: none; letter-spacing: normal; font-size: 0.95rem;">
+                        <input type="checkbox" id="report-save" checked />
+                        Save outputs to disk
+                    </label>
+                    <button onclick="triggerAnnualReport()">Annual summary</button>
+                    <button onclick="triggerScheduleE()">Schedule E (Legacy)</button>
+                    <button onclick="triggerPerPropertyScheduleE()" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">📋 Per-Property Schedule E</button>
+                    <button onclick="triggerAggregatedScheduleE()" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">📊 Aggregated Schedule E</button>
+                    <button onclick="triggerPropertyPdfReport()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">📄 Property Report (PDF)</button>
+                    <button onclick="triggerPropertyExcelReport()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">📊 Property Report (Excel)</button>
+                </div>
+                <div class="artifact-grid" id="report-artifacts">
+                    {% for key, info in report_status.artifacts.items() %}
+                    <div class="artifact-row">
+                        <span>
+                            <strong>{{ info.display_name }}</strong>
+                            {% if info.exists %}
+                                <small>Generated {{ info.modified_at }} · {{ (info.size_bytes / 1024)|round(1) }} KB</small>
+                            {% else %}
+                                <small>Not generated for {{ report_status.year }}</small>
+                            {% endif %}
+                        </span>
+                        <div class="control-group">
+                            <button onclick="downloadArtifact('{{ key }}')" {% if not info.exists %}disabled{% endif %}>Download</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <h3>3. Export processed data</h3>
+                <div class="control-group">
+                    <button onclick="downloadDataset('income')">Download income CSV</button>
+                    <button onclick="downloadDataset('expenses')">Download expenses CSV</button>
+                    <button onclick="downloadExcelReport()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">📊 Export Excel Report</button>
+                </div>
+                {% if processed_status.export_audit %}
+                <div class="export-log">
+                    <strong>Recent exports</strong>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Table</th>
+                                <th>Rows</th>
+                                <th>Last exported</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in processed_status.export_audit[:5] %}
+                            <tr>
+                                <td>{{ row.table_name }}</td>
+                                <td>{{ row.row_count }}</td>
+                                <td>{{ row.exported_at }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- System Management Section -->
+    <div class="section" style="border: 3px solid #8b5cf6;">
+        <h2 style="color: #8b5cf6;">⚙️ System Management</h2>
+
+        <!-- System Status Banner -->
+        <div id="system-status-banner" style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); padding: 1.5rem; border-radius: 0.75rem; border: 2px solid #c4b5fd; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 0.5rem 0; color: #6b21a8; font-size: 1.1rem;">🔄 Application Status</h3>
+                    <p id="system-status-message" style="margin: 0; color: #475569; font-size: 0.95rem;">
+                        <span class="status-badge info">Checking status...</span>
+                    </p>
+                    <div id="git-info" style="margin-top: 0.75rem; font-size: 0.85rem; color: #64748b; display: none;">
+                        <div><strong>Branch:</strong> <span id="git-branch">-</span></div>
+                        <div><strong>Commit:</strong> <span id="git-commit">-</span></div>
+                        <div><strong>Updates:</strong> <span id="git-updates">-</span></div>
+                    </div>
+                </div>
+                <button onclick="checkSystemStatus()" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                    🔍 Check Status
+                </button>
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <!-- Git Status Card -->
+            <div class="card" id="git-status-card">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div class="card-icon">🔀</div>
+                    <span id="git-status-badge" class="status-badge info" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                        Unknown
+                    </span>
+                </div>
+                <span class="card-label">Git Repository</span>
+                <span class="card-value" id="git-status-value">-</span>
+            </div>
+
+            <!-- Server Status Card -->
+            <div class="card status-ready">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div class="card-icon">🖥️</div>
+                    <span class="status-badge success" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                        Online
+                    </span>
+                </div>
+                <span class="card-label">Server Status</span>
+                <span class="card-value" id="server-status-value">Running</span>
+            </div>
+
+            <!-- Updates Available Card -->
+            <div class="card" id="updates-card">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div class="card-icon">⬇️</div>
+                    <span id="updates-badge" class="status-badge info" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                        Checking...
+                    </span>
+                </div>
+                <span class="card-label">Updates Available</span>
+                <span class="card-value" id="updates-value">-</span>
+            </div>
+
+            <!-- Deployment Type Card -->
+            <div class="card">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div class="card-icon">📦</div>
+                    <span class="status-badge info" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                        Info
+                    </span>
+                </div>
+                <span class="card-label">Deployment Type</span>
+                <span class="card-value" id="deployment-value">-</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div>
+                <h3>🔄 Update Application</h3>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">
+                    Pull the latest changes from GitHub repository. Server restart required after update.
+                </p>
+                <div class="control-group">
+                    <button onclick="updateApplication()" id="update-btn">
+                        ⬇️ Pull Latest Changes
+                    </button>
+                    <button onclick="updateAndRestart()" id="update-restart-btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        🔄 Update & Restart
+                    </button>
+                </div>
+                <div id="update-output" style="display: none; margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; max-height: 300px; overflow-y: auto;">
+                    <pre id="update-log" style="margin: 0; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word;"></pre>
+                </div>
+            </div>
+
+            <div>
+                <h3>🔄 Restart Server</h3>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">
+                    Restart the application server. Connection will be briefly interrupted (5-10 seconds).
+                </p>
+                <div class="control-group">
+                    <button onclick="restartServer()" id="restart-btn" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                        🔄 Restart Server
+                    </button>
+                </div>
+                <div id="restart-output" style="display: none; margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 0.5rem; border: 1px solid #fcd34d;">
+                    <p id="restart-message" style="margin: 0; font-size: 0.9rem;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💵 Income Mapping Review</h2>
+        <div class="control-group" style="margin-bottom: 1rem;">
+            <label>
+                Filter by property
+                <select id="income-filter-property">
+                    <option value="">All properties</option>
+                    {% for option in property_options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Search memo / ID
+                <input type="text" id="income-search" placeholder="Search…" />
+            </label>
+        </div>
+
+        {% if income_items %}
+        <table id="income-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Memo</th>
+                    <th>Amount</th>
+                    <th>Current Property</th>
+                    <th>Status</th>
+                    <th>Transaction ID</th>
+                    <th>Assign Property</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in income_items %}
+                <tr id="income-row-{{ loop.index }}" data-property="{{ item.get('property_name') or '' }}" data-search="{{ (item.get('memo') or '') | lower }} {{ item.get('transaction_id') | lower }}">
+                    <td>{{ item.get('date') }}</td>
+                    <td>{{ item.get('memo') }}</td>
+                    <td>{{ item.get('amount') }}</td>
+                    <td>{{ item.get('property_name') or 'Unassigned' }}</td>
+                    <td>
+                        <span class="badge badge-warning">{{ item.get('mapping_status', 'manual_review') }}</span>
+                    </td>
+                    <td>{{ item.get('transaction_id') }}</td>
+                    <td>
+                        <div class="actions">
+                            {% if property_options %}
+                                <select id="income-prop-{{ loop.index }}">
+                                    <option value="">Select property…</option>
+                                    {% for option in property_options %}
+                                        <option value="{{ option }}" {% if option == item.get('property_name') %}selected{% endif %}>{{ option }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="text" placeholder="Property" id="income-prop-{{ loop.index }}" />
+                            {% endif %}
+                            <input type="text" placeholder="Notes" id="income-note-{{ loop.index }}" />
+                            <button onclick="submitIncome('{{ item.get('transaction_id') }}', {{ loop.index }})">Save</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty" id="income-empty">✅ All income deposits are mapped. Great work!</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>💳 Expense Category Review</h2>
+        <div class="control-group" style="margin-bottom: 1rem;">
+            <label>
+                Filter by property
+                <select id="expense-filter-property">
+                    <option value="">All properties</option>
+                    {% for option in property_options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Filter by category
+                <select id="expense-filter-category">
+                    <option value="">All categories</option>
+                    {% for option in expense_options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Search description / ID
+                <input type="text" id="expense-search" placeholder="Search…" />
+            </label>
+        </div>
+        {% if expense_items %}
+        <table id="expense-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Memo</th>
+                    <th>Amount</th>
+                    <th>Current Category</th>
+                    <th>Transaction ID</th>
+                    <th>Assign Category &amp; Property</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in expense_items %}
+                <tr id="expense-row-{{ loop.index }}" data-property="{{ item.get('property_name') or '' }}" data-category="{{ item.get('category') or '' }}" data-search="{{ (item.get('memo') or '') | lower }} {{ item.get('transaction_id') | lower }}">
+                    <td>{{ item.get('date') }}</td>
+                    <td>{{ item.get('memo') }}</td>
+                    <td>{{ item.get('amount') }}</td>
+                    <td>
+                        {{ item.get('category') or 'Uncategorized' }}
+                        {% if item.get('category_status') %}
+                            <span class="badge badge-info">{{ item.get('category_status') }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.get('transaction_id') }}</td>
+                    <td>
+                        <div class="actions">
+                            {% if expense_options %}
+                                <select id="expense-cat-{{ loop.index }}">
+                                    <option value="">Select category…</option>
+                                    {% for option in expense_options %}
+                                        <option value="{{ option }}" {% if option == item.get('category') %}selected{% endif %}>{{ option }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="text" placeholder="Category" id="expense-cat-{{ loop.index }}" value="{{ item.get('category') or '' }}" />
+                            {% endif %}
+
+                            {% if property_options %}
+                                <select id="expense-prop-{{ loop.index }}">
+                                    <option value="">Select property…</option>
+                                    {% for option in property_options %}
+                                        <option value="{{ option }}" {% if option == item.get('property_name') %}selected{% endif %}>{{ option }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="text" placeholder="Property" id="expense-prop-{{ loop.index }}" />
+                            {% endif %}
+
+                            <button onclick="submitExpense('{{ item.get('transaction_id') }}', {{ loop.index }})">Save</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty" id="expense-empty">✅ No expenses require manual categorization. All set!</p>
+        {% endif %}
+    </div>
+
+    <script>
+        // Enhanced toast notifications with detail support
+        let toastTimeout;
+
+        function showToast(message, variant = 'success', detail = '') {
+            const toast = document.getElementById('toast');
+            const toastIcon = toast.querySelector('.toast-icon');
+            const toastMessage = document.getElementById('toast-message');
+            const toastDetail = document.getElementById('toast-detail');
+
+            // Clear any existing timeout
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
+
+            toastMessage.textContent = message;
+            toast.classList.remove('error');
+
+            // Handle detail text
+            if (detail) {
+                toastDetail.textContent = detail;
+                toastDetail.style.display = 'block';
+            } else {
+                toastDetail.style.display = 'none';
+            }
+
+            if (variant === 'error') {
+                toast.classList.add('error');
+                toastIcon.textContent = '⚠️';
+            } else {
+                toastIcon.textContent = '✅';
+            }
+
+            toast.classList.add('show');
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.classList.remove('error');
+                }, 300);
+            }, 3500);
+        }
+
+        function dismissToast() {
+            const toast = document.getElementById('toast');
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.classList.remove('error');
+            }, 300);
+        }
+
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.dataset.originalText = button.innerHTML;
+                button.innerHTML = '<span class="spinner"></span> <span style="margin-left: 0.5rem;">Loading...</span>';
+                button.disabled = true;
+                button.style.opacity = '0.7';
+                button.style.cursor = 'wait';
+            } else {
+                button.innerHTML = button.dataset.originalText || button.innerHTML;
+                button.disabled = false;
+                button.style.opacity = '';
+                button.style.cursor = '';
+                delete button.dataset.originalText;
+            }
+        }
+
+        function parseYear(inputId) {
+            const field = document.getElementById(inputId);
+            const placeholder = field.getAttribute('placeholder');
+            const value = field.value.trim() || placeholder;
+            if (!value) return undefined;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : undefined;
+        }
+
+        async function triggerProcess() {
+            const button = event.target;
+            const year = parseYear('process-year');
+            const bankPath = document.getElementById('process-bank-file').value.trim();
+
+            const payload = {};
+            if (year) payload.year = year;
+            if (bankPath) payload.bank_file_path = bankPath;
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch('/process/bank', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Processor failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                showToast(`Processed ${result.income_rows} income / ${result.expense_rows} expenses`);
+                setTimeout(() => location.reload(), 800);
+            } catch (error) {
+                setButtonLoading(button, false);
+                showToast(error.message || 'Processor failed', 'error');
+            }
+        }
+
+        async function triggerAnnualReport() {
+            const button = event.target;
+            const year = parseYear('report-year');
+            const saveOutputs = document.getElementById('report-save').checked;
+
+            const payload = { save_outputs: saveOutputs };
+            if (year) payload.year = year;
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch('/reports/annual', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Annual report failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                showToast(`Annual summary ready (net income $${result.net_income.toFixed(2)})`);
+                await refreshReportsStatus();
+            } catch (error) {
+                showToast(error.message || 'Annual report failed', 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        async function triggerScheduleE() {
+            const button = event.target;
+            const year = parseYear('report-year');
+            const payload = {};
+            if (year) payload.year = year;
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch('/reports/schedule-e', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Schedule E failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                await response.json();
+                showToast('Schedule E generated');
+                await refreshReportsStatus();
+            } catch (error) {
+                showToast(error.message || 'Schedule E failed', 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        async function triggerPerPropertyScheduleE() {
+            const button = event.target;
+            const year = parseYear('report-year');
+            const saveOutputs = document.getElementById('report-save')?.checked ?? true;
+            const payload = { save_outputs: saveOutputs };
+            if (year) payload.year = year;
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch('/reports/schedule-e/per-property', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Per-property Schedule E failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                const propertyCount = Object.keys(result).length;
+                showToast(`Per-property Schedule E generated for ${propertyCount} properties`);
+                await refreshReportsStatus();
+            } catch (error) {
+                showToast(error.message || 'Per-property Schedule E failed', 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        async function triggerAggregatedScheduleE() {
+            const button = event.target;
+            const year = parseYear('report-year');
+            const saveOutputs = document.getElementById('report-save')?.checked ?? true;
+            const payload = { save_outputs: saveOutputs };
+            if (year) payload.year = year;
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch('/reports/schedule-e/aggregate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Aggregated Schedule E failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                const propertyCount = result.property_count || 0;
+                const netIncome = result['12'] || 0;
+                showToast(`Aggregated Schedule E generated (${propertyCount} properties, net income: $${netIncome.toFixed(2)})`);
+                await refreshReportsStatus();
+            } catch (error) {
+                showToast(error.message || 'Aggregated Schedule E failed', 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        async function triggerPropertyPdfReport() {
+            const button = event.target;
+            const year = parseYear('report-year');
+            const saveOutputs = document.getElementById('report-save')?.checked ?? true;
+            const payload = { save_outputs: saveOutputs };
+            if (year) payload.year = year;
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch('/reports/property/pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Property PDF report failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                const propertyCount = result.properties?.length || 0;
+                const netIncome = result.total_net || 0;
+                showToast(`Property PDF report generated (${propertyCount} properties, net income: $${netIncome.toFixed(2)})`);
+                await refreshReportsStatus();
+            } catch (error) {
+                showToast(error.message || 'Property PDF report failed', 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        async function triggerPropertyExcelReport() {
+            const button = event.target;
+            const year = parseYear('report-year');
+            const saveOutputs = document.getElementById('report-save')?.checked ?? true;
+            const payload = { save_outputs: saveOutputs };
+            if (year) payload.year = year;
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch('/reports/property/excel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Property Excel report failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                const propertyCount = result.properties?.length || 0;
+                const netIncome = result.total_net || 0;
+                showToast(`Property Excel report generated (${propertyCount} properties, net income: $${netIncome.toFixed(2)})`);
+                await refreshReportsStatus();
+            } catch (error) {
+                showToast(error.message || 'Property Excel report failed', 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        async function downloadDataset(dataset) {
+            try {
+                const response = await fetch(`/export/${dataset}`);
+                if (!response.ok) {
+                    let errorMessage = 'Download failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `processed_${dataset}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+                showToast(`Downloaded ${dataset} dataset`);
+            } catch (error) {
+                showToast(error.message || 'Download failed', 'error');
+            }
+        }
+
+        async function downloadExcelReport() {
+            const button = event.target;
+            const year = parseYear('report-year');
+            const query = year ? `?year=${encodeURIComponent(year)}` : '';
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch(`/export/excel/report${query}`);
+                if (!response.ok) {
+                    let errorMessage = 'Excel export failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const blob = await response.blob();
+                const disposition = response.headers.get('content-disposition') || '';
+                let filename = disposition.split('filename=')[1] || `lust_rentals_report.xlsx`;
+                filename = filename.replace(/"/g, '');
+
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+                showToast(`Excel report downloaded: ${filename}`);
+            } catch (error) {
+                showToast(error.message || 'Excel export failed', 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        async function downloadArtifact(key) {
+            const year = parseYear('report-year');
+            const query = year ? `?year=${encodeURIComponent(year)}` : '';
+            try {
+                const response = await fetch(`/reports/download/${key}${query}`);
+                if (!response.ok) {
+                    let errorMessage = 'Download failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const blob = await response.blob();
+                const disposition = response.headers.get('content-disposition') || '';
+                let filename = disposition.split('filename=')[1] || `${key}.dat`;
+                filename = filename.replace(/"/g, '');
+
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+                showToast(`Downloaded ${filename}`);
+            } catch (error) {
+                showToast(error.message || 'Download failed', 'error');
+            }
+        }
+
+        async function refreshReportsStatus() {
+            const year = parseYear('report-year');
+            const query = year ? `?year=${encodeURIComponent(year)}` : '';
+
+            try {
+                const response = await fetch(`/reports/status${query}`);
+                if (!response.ok) {
+                    throw new Error('Failed to refresh report status');
+                }
+
+                const data = await response.json();
+                const container = document.getElementById('report-artifacts');
+                container.innerHTML = '';
+
+                Object.entries(data.artifacts).forEach(([key, info]) => {
+                    const row = document.createElement('div');
+                    row.className = 'artifact-row';
+
+                    const span = document.createElement('span');
+                    const title = document.createElement('strong');
+                    title.textContent = info.display_name;
+                    span.appendChild(title);
+
+                    const detail = document.createElement('small');
+                    if (info.exists) {
+                        const sizeKb = (info.size_bytes / 1024).toFixed(1);
+                        detail.textContent = `Generated ${info.modified_at} · ${sizeKb} KB`;
+                    } else {
+                        detail.textContent = `Not generated for ${data.year}`;
+                    }
+                    span.appendChild(detail);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'control-group';
+                    const button = document.createElement('button');
+                    button.textContent = 'Download';
+                    button.disabled = !info.exists;
+                    button.onclick = () => downloadArtifact(key);
+                    actions.appendChild(button);
+
+                    row.appendChild(span);
+                    row.appendChild(actions);
+                    container.appendChild(row);
+                });
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        let incomeCounts = Number(document.getElementById('income-count')?.textContent || 0);
+        let expenseCounts = Number(document.getElementById('expense-count')?.textContent || 0);
+
+        function updateCounts() {
+            const incomeTable = document.getElementById('income-table');
+            const expenseTable = document.getElementById('expense-table');
+            const incomeVisible = incomeTable
+                ? incomeTable.querySelectorAll('tbody tr:not([data-hidden="true"])').length
+                : 0;
+            const expenseVisible = expenseTable
+                ? expenseTable.querySelectorAll('tbody tr:not([data-hidden="true"])').length
+                : 0;
+            const incomeCountEl = document.getElementById('income-count');
+            const expenseCountEl = document.getElementById('expense-count');
+            if (incomeCountEl) incomeCountEl.textContent = incomeVisible;
+            if (expenseCountEl) expenseCountEl.textContent = expenseVisible;
+            const incomeEmpty = document.getElementById('income-empty');
+            const expenseEmpty = document.getElementById('expense-empty');
+            if (incomeEmpty) incomeEmpty.style.display = incomeVisible ? 'none' : 'block';
+            if (expenseEmpty) expenseEmpty.style.display = expenseVisible ? 'none' : 'block';
+        }
+
+        function attachFilters() {
+            const incomePropertyFilter = document.getElementById('income-filter-property');
+            const incomeSearch = document.getElementById('income-search');
+            const expensePropertyFilter = document.getElementById('expense-filter-property');
+            const expenseCategoryFilter = document.getElementById('expense-filter-category');
+            const expenseSearch = document.getElementById('expense-search');
+
+            const STORAGE_KEYS = {
+                incomeProperty: 'review_income_property_filter',
+                incomeSearch: 'review_income_search_filter',
+                expenseProperty: 'review_expense_property_filter',
+                expenseCategory: 'review_expense_category_filter',
+                expenseSearch: 'review_expense_search_filter',
+            };
+
+            function restoreSelect(selectEl, value) {
+                if (!selectEl || value === null) return;
+                const hasOption = Array.from(selectEl.options).some((opt) => opt.value === value);
+                if (hasOption) selectEl.value = value;
+            }
+
+            function restoreInput(inputEl, value) {
+                if (!inputEl || value === null) return;
+                inputEl.value = value;
+            }
+
+            function applyIncomeFilters() {
+                const propertyValue = incomePropertyFilter.value;
+                const searchValue = incomeSearch.value.trim().toLowerCase();
+                document.querySelectorAll('#income-table tbody tr').forEach((row) => {
+                    const matchesProperty = !propertyValue || row.dataset.property === propertyValue;
+                    const matchesSearch = !searchValue || row.dataset.search.includes(searchValue);
+                    const visible = matchesProperty && matchesSearch;
+                    row.dataset.hidden = visible ? 'false' : 'true';
+                    row.style.display = visible ? '' : 'none';
+                });
+                updateCounts();
+            }
+
+            function applyExpenseFilters() {
+                const propertyValue = expensePropertyFilter.value;
+                const categoryValue = expenseCategoryFilter.value;
+                const searchValue = expenseSearch.value.trim().toLowerCase();
+                document.querySelectorAll('#expense-table tbody tr').forEach((row) => {
+                    const matchesProperty = !propertyValue || row.dataset.property === propertyValue;
+                    const matchesCategory = !categoryValue || row.dataset.category === categoryValue;
+                    const matchesSearch = !searchValue || row.dataset.search.includes(searchValue);
+                    const visible = matchesProperty && matchesCategory && matchesSearch;
+                    row.dataset.hidden = visible ? 'false' : 'true';
+                    row.style.display = visible ? '' : 'none';
+                });
+                updateCounts();
+            }
+
+            restoreSelect(incomePropertyFilter, localStorage.getItem(STORAGE_KEYS.incomeProperty));
+            restoreInput(incomeSearch, localStorage.getItem(STORAGE_KEYS.incomeSearch));
+            restoreSelect(expensePropertyFilter, localStorage.getItem(STORAGE_KEYS.expenseProperty));
+            restoreSelect(expenseCategoryFilter, localStorage.getItem(STORAGE_KEYS.expenseCategory));
+            restoreInput(expenseSearch, localStorage.getItem(STORAGE_KEYS.expenseSearch));
+
+            incomePropertyFilter?.addEventListener('change', () => {
+                localStorage.setItem(STORAGE_KEYS.incomeProperty, incomePropertyFilter.value);
+                applyIncomeFilters();
+            });
+            incomeSearch?.addEventListener('input', () => {
+                localStorage.setItem(STORAGE_KEYS.incomeSearch, incomeSearch.value.trim());
+                applyIncomeFilters();
+            });
+            expensePropertyFilter?.addEventListener('change', () => {
+                localStorage.setItem(STORAGE_KEYS.expenseProperty, expensePropertyFilter.value);
+                applyExpenseFilters();
+            });
+            expenseCategoryFilter?.addEventListener('change', () => {
+                localStorage.setItem(STORAGE_KEYS.expenseCategory, expenseCategoryFilter.value);
+                applyExpenseFilters();
+            });
+            expenseSearch?.addEventListener('input', () => {
+                localStorage.setItem(STORAGE_KEYS.expenseSearch, expenseSearch.value.trim());
+                applyExpenseFilters();
+            });
+
+            applyIncomeFilters();
+            applyExpenseFilters();
+        }
+
+        async function submitIncome(transactionId, index) {
+            const button = event.target;
+            const propertyInput = document.getElementById(`income-prop-${index}`);
+            const noteInput = document.getElementById(`income-note-${index}`);
+            const payload = { property_name: propertyInput.value, mapping_notes: noteInput.value };
+            if (!payload.property_name) {
+                showToast('Property is required', 'error');
+                return;
+            }
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch(`/review/income/${transactionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Failed to save override';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const row = document.getElementById(`income-row-${index}`);
+                if (row) {
+                    row.remove();
+                    incomeCounts = Math.max(0, incomeCounts - 1);
+                    updateCounts();
+                }
+                showToast('Income override saved');
+            } catch (error) {
+                setButtonLoading(button, false);
+                showToast(error.message || 'Failed to save override', 'error');
+            }
+        }
+
+        async function submitExpense(transactionId, index) {
+            const button = event.target;
+            const categoryInput = document.getElementById(`expense-cat-${index}`);
+            const propertyInput = document.getElementById(`expense-prop-${index}`);
+            const payload = { category: categoryInput.value, property_name: propertyInput.value };
+            if (!payload.category) {
+                showToast('Category is required', 'error');
+                return;
+            }
+            if (!payload.property_name) {
+                showToast('Property is required', 'error');
+                return;
+            }
+
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch(`/review/expenses/${transactionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Failed to save override';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const row = document.getElementById(`expense-row-${index}`);
+                if (row) {
+                    row.remove();
+                    expenseCounts = Math.max(0, expenseCounts - 1);
+                    updateCounts();
+                }
+                showToast('Expense override saved');
+            } catch (error) {
+                setButtonLoading(button, false);
+                showToast(error.message || 'Failed to save override', 'error');
+            }
+        }
+
+        // Enhanced Database Status Functions with Visual Feedback
+        async function refreshDatabaseStatus() {
+            const statusCard = document.getElementById('db-status-card');
+            const statusIcon = document.getElementById('db-status-icon');
+            const statusBadge = document.getElementById('db-status-badge');
+            const statusMessage = document.getElementById('db-status-message');
+            const statusProgress = document.getElementById('db-status-progress');
+            const progressFill = document.getElementById('db-progress-fill');
+            const progressLabel = document.getElementById('db-progress-label');
+            const progressPercent = document.getElementById('db-progress-percent');
+            const tablesInfo = document.getElementById('db-tables-info');
+            const tablesGrid = document.getElementById('db-tables-grid');
+            const totalCount = document.getElementById('db-total-count');
+
+            // Reset to loading state with animation
+            statusCard.className = 'db-status-card';
+            statusIcon.textContent = '⏳';
+            statusIcon.classList.add('pulse');
+            statusBadge.className = 'status-badge info';
+            statusBadge.textContent = 'Checking...';
+            statusMessage.textContent = 'Connecting to database...';
+
+            // Show and animate progress bar
+            statusProgress.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressLabel.textContent = 'Checking database...';
+            progressPercent.textContent = '0%';
+
+            // Simulate progress animation
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 15;
+                if (progress <= 90) {
+                    progressFill.style.width = `${progress}%`;
+                    progressPercent.textContent = `${progress}%`;
+                }
+            }, 100);
+
+            try {
+                const response = await fetch('/database/status');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                // Validate data structure
+                if (!data || typeof data !== 'object') {
+                    throw new Error('Invalid response format');
+                }
+
+                // Complete progress animation
+                clearInterval(progressInterval);
+                progressFill.style.width = '100%';
+                progressPercent.textContent = '100%';
+                progressLabel.textContent = 'Status loaded!';
+
+                // Remove pulse animation
+                statusIcon.classList.remove('pulse');
+
+                // Update status display with color coding
+                if (data.ready_for_reports) {
+                    statusCard.className = 'db-status-card ready';
+                    statusIcon.textContent = '✅';
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = 'Ready';
+                    const sizeKB = ((data.database_size_bytes || 0) / 1024).toFixed(1);
+                    const sizeMB = (sizeKB / 1024).toFixed(2);
+                    const sizeDisplay = sizeKB > 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+                    statusMessage.innerHTML = `<strong style="color: #065f46; font-size: 1.1rem;">${data.message || 'Database is ready for reports!'}</strong><br><small style="color: #047857;">Database size: ${sizeDisplay} • All systems operational</small>`;
+                } else if (data.database_exists) {
+                    statusCard.className = 'db-status-card warning';
+                    statusIcon.textContent = '⚠️';
+                    statusBadge.className = 'status-badge warning';
+                    statusBadge.textContent = 'Needs Data';
+                    const sizeKB = ((data.database_size_bytes || 0) / 1024).toFixed(1);
+                    statusMessage.innerHTML = `<strong style="color: #92400e; font-size: 1.1rem;">${data.message || 'Database found but needs data'}</strong><br><small style="color: #b45309;">Database size: ${sizeKB} KB • Upload and process transactions to continue</small>`;
+                } else {
+                    statusCard.className = 'db-status-card error';
+                    statusIcon.textContent = '❌';
+                    statusBadge.className = 'status-badge error';
+                    statusBadge.textContent = 'Not Found';
+                    statusMessage.innerHTML = `<strong style="color: #991b1b; font-size: 1.1rem;">${data.message || 'Database not found'}</strong><br><small style="color: #dc2626;">Upload and process a bank file to create the database</small>`;
+                }
+
+                // Hide progress after a delay
+                setTimeout(() => {
+                    statusProgress.style.display = 'none';
+                }, 1500);
+
+                // Display enhanced table information
+                if (data.tables && typeof data.tables === 'object' && Object.keys(data.tables).length > 0) {
+                    tablesInfo.style.display = 'block';
+                    tablesGrid.innerHTML = '';
+
+                    // Calculate total records
+                    let totalRecords = 0;
+
+                    Object.entries(data.tables).forEach(([tableName, tableInfo]) => {
+                        totalRecords += tableInfo.row_count || 0;
+
+                        const tableCard = document.createElement('div');
+                        const isMainTable = tableName.includes('processed_income') || tableName.includes('processed_expenses');
+                        const hasData = tableInfo.row_count > 0;
+
+                        let cardBorder = '#e2e8f0';
+                        let cardBg = 'white';
+                        let iconEmoji = '📋';
+
+                        if (isMainTable) {
+                            if (hasData) {
+                                cardBorder = '#6ee7b7';
+                                cardBg = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
+                                iconEmoji = '✅';
+                            } else {
+                                cardBorder = '#fcd34d';
+                                cardBg = 'linear-gradient(135deg, #fffbeb, #fef3c7)';
+                                iconEmoji = '⚠️';
+                            }
+                        }
+
+                        tableCard.style.cssText = `background: ${cardBg}; padding: 1.25rem; border-radius: 0.75rem; border: 2px solid ${cardBorder}; transition: all 0.3s ease;`;
+                        tableCard.onmouseenter = () => {
+                            tableCard.style.transform = 'translateY(-2px) scale(1.02)';
+                            tableCard.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                        };
+                        tableCard.onmouseleave = () => {
+                            tableCard.style.transform = '';
+                            tableCard.style.boxShadow = '';
+                        };
+
+                        // Calculate data completeness percentage
+                        const maxExpectedRows = isMainTable ? 100 : 10; // Arbitrary baseline
+                        const completeness = Math.min(100, (tableInfo.row_count / maxExpectedRows) * 100);
+
+                        tableCard.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                                <span style="font-size: 2rem; line-height: 1;">${iconEmoji}</span>
+                                <div style="flex: 1;">
+                                    <strong style="color: #1e293b; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">${tableName}</strong>
+                                    <div style="font-size: 0.75rem; color: #64748b;">${tableInfo.column_count} columns</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;">
+                                <div class="metric-circle" style="width: 50px; height: 50px; font-size: 1.1rem; ${isMainTable && hasData ? 'background: linear-gradient(135deg, #10b981, #059669);' : 'background: linear-gradient(135deg, #64748b, #475569);'}">
+                                    ${tableInfo.row_count > 999 ? Math.floor(tableInfo.row_count / 1000) + 'k' : tableInfo.row_count}
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Records</div>
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 1.1rem;">${tableInfo.row_count.toLocaleString()}</div>
+                                </div>
+                            </div>
+                            ${isMainTable ? `
+                            <div style="margin-top: 0.75rem;">
+                                <div class="progress-bar" style="height: 6px;">
+                                    <div class="progress-fill" style="width: ${Math.min(100, completeness)}%; background: linear-gradient(90deg, ${hasData ? '#10b981, #059669' : '#f59e0b, #d97706'});"></div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        `;
+                        tablesGrid.appendChild(tableCard);
+                    });
+
+                    // Update total count
+                    totalCount.textContent = totalRecords.toLocaleString();
+                } else {
+                    tablesInfo.style.display = 'none';
+                }
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                console.error('Database status error:', error);
+
+                statusCard.className = 'db-status-card error';
+                statusIcon.classList.remove('pulse');
+                statusIcon.textContent = '❌';
+                statusBadge.className = 'status-badge error';
+                statusBadge.textContent = 'Error';
+                statusMessage.innerHTML = `<strong style="color: #991b1b;">Error loading database status</strong><br><small style="color: #dc2626;">${error.message || 'Unknown error - please try refreshing'}</small>`;
+
+                progressFill.style.width = '100%';
+                progressFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                progressLabel.textContent = 'Failed to load status';
+                progressPercent.textContent = 'Error';
+
+                setTimeout(() => {
+                    statusProgress.style.display = 'none';
+                }, 2000);
+
+                tablesInfo.style.display = 'none';
+            }
+        }
+
+        // File Upload Functions
+        function handleFileSelect(event) {
+            const uploadBtn = document.getElementById('upload-btn');
+            const file = event.target.files[0];
+            uploadBtn.disabled = !file;
+        }
+
+        async function uploadBankFile() {
+            const fileInput = document.getElementById('bank-file-input');
+            const uploadBtn = document.getElementById('upload-btn');
+            const uploadStatus = document.getElementById('upload-status');
+            const importBankFile = document.getElementById('import-bank-file');
+            const processBtn = document.getElementById('process-uploaded-btn');
+
+            const file = fileInput.files[0];
+            if (!file) {
+                showToast('Please select a file first', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            setButtonLoading(uploadBtn, true);
+            uploadStatus.style.display = 'none';
+
+            try {
+                const response = await fetch('/upload/bank-file', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Upload failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                    } catch (jsonError) {
+                        // Response is not JSON, use status text
+                        errorMessage = `Upload failed: ${response.statusText || 'Server error'}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+
+                uploadStatus.style.display = 'block';
+                uploadStatus.style.background = 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)';
+                uploadStatus.style.border = '2px solid #6ee7b7';
+                uploadStatus.style.color = '#065f46';
+                uploadStatus.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem;">✅</span>
+                        <div>
+                            <strong>${result.message}</strong><br>
+                            <small>File: ${result.filename} (${(result.file_size_bytes / 1024).toFixed(1)} KB)</small><br>
+                            <small>Headers: ${result.headers.join(', ')}</small>
+                        </div>
+                    </div>
+                `;
+
+                importBankFile.value = result.file_path;
+                processBtn.disabled = false;
+
+                showToast(`✅ ${result.filename} uploaded successfully!`);
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                uploadStatus.style.display = 'block';
+                uploadStatus.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
+                uploadStatus.style.border = '2px solid #fca5a5';
+                uploadStatus.style.color = '#991b1b';
+                uploadStatus.innerHTML = `<strong>❌ Upload failed:</strong> ${error.message || 'Unknown error'}`;
+
+                showToast(error.message || 'Upload failed', 'error');
+            } finally {
+                setButtonLoading(uploadBtn, false);
+            }
+        }
+
+        async function processUploadedFile() {
+            const button = event.target;
+            const year = parseYear('import-process-year');
+            const bankPath = document.getElementById('import-bank-file').value.trim();
+            const processResult = document.getElementById('process-result');
+
+            if (!bankPath) {
+                showToast('Please upload a file first', 'error');
+                return;
+            }
+
+            const payload = { bank_file_path: bankPath };
+            if (year) payload.year = year;
+
+            setButtonLoading(button, true);
+            processResult.style.display = 'none';
+
+            try {
+                const response = await fetch('/process/bank', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Processing failed');
+                }
+
+                const result = await response.json();
+
+                processResult.style.display = 'block';
+                processResult.style.background = 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)';
+                processResult.style.padding = '1.5rem';
+                processResult.style.borderRadius = '0.75rem';
+                processResult.style.border = '2px solid #6ee7b7';
+                processResult.style.color = '#065f46';
+                processResult.innerHTML = `
+                    <h3 style="margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 2rem;">✅</span>
+                        Processing Complete!
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-size: 0.95rem;">
+                        <div>
+                            <strong>Income Rows:</strong><br>
+                            <span style="font-size: 1.5rem;">${result.income_rows}</span>
+                        </div>
+                        <div>
+                            <strong>Expense Rows:</strong><br>
+                            <span style="font-size: 1.5rem;">${result.expense_rows}</span>
+                        </div>
+                        <div>
+                            <strong>Total Transactions:</strong><br>
+                            <span style="font-size: 1.5rem;">${result.income_rows + result.expense_rows}</span>
+                        </div>
+                    </div>
+                    <p style="margin: 1rem 0 0 0;"><strong>Next Steps:</strong> Scroll down to review income/expense mappings, then generate reports!</p>
+                `;
+
+                showToast(`✅ Processed ${result.income_rows} income / ${result.expense_rows} expense transactions`);
+
+                // Refresh database status
+                await refreshDatabaseStatus();
+
+                // Reload page after a delay to show updated review items
+                setTimeout(() => location.reload(), 2000);
+            } catch (error) {
+                processResult.style.display = 'block';
+                processResult.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
+                processResult.style.padding = '1rem';
+                processResult.style.borderRadius = '0.5rem';
+                processResult.style.border = '2px solid #fca5a5';
+                processResult.style.color = '#991b1b';
+                processResult.innerHTML = `<strong>❌ Processing failed:</strong> ${error.message}`;
+
+                showToast(error.message || 'Processing failed', 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        // Update current time in header
+        function updateCurrentTime() {
+            const timeEl = document.getElementById('current-time');
+            if (timeEl) {
+                const now = new Date();
+                const options = {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                };
+                timeEl.textContent = now.toLocaleDateString('en-US', options);
+            }
+        }
+
+        // System Management Functions
+
+        async function checkSystemStatus() {
+            const statusMessage = document.getElementById('system-status-message');
+            const gitInfo = document.getElementById('git-info');
+            const gitBranch = document.getElementById('git-branch');
+            const gitCommit = document.getElementById('git-commit');
+            const gitUpdates = document.getElementById('git-updates');
+            const gitStatusCard = document.getElementById('git-status-card');
+            const gitStatusBadge = document.getElementById('git-status-badge');
+            const gitStatusValue = document.getElementById('git-status-value');
+            const updatesCard = document.getElementById('updates-card');
+            const updatesBadge = document.getElementById('updates-badge');
+            const updatesValue = document.getElementById('updates-value');
+            const deploymentValue = document.getElementById('deployment-value');
+
+            try {
+                const response = await fetch('/system/status');
+                if (!response.ok) throw new Error('Failed to fetch system status');
+
+                const status = await response.json();
+
+                // Update git info
+                if (status.git.available) {
+                    gitBranch.textContent = status.git.branch || 'Unknown';
+                    gitCommit.textContent = status.git.commit || 'Unknown';
+                    gitUpdates.textContent = status.git.updates_available > 0
+                        ? `${status.git.updates_available} update(s) available`
+                        : 'Up to date';
+                    gitInfo.style.display = 'block';
+
+                    gitStatusValue.textContent = status.git.branch || 'Unknown';
+                    gitStatusBadge.textContent = 'Available';
+                    gitStatusBadge.className = 'status-badge success';
+                    gitStatusCard.className = 'card status-ready';
+
+                    if (status.git.uncommitted_changes) {
+                        statusMessage.innerHTML = '<span class="status-badge warning">⚠️ Uncommitted changes detected</span>';
+                    } else if (status.git.updates_available > 0) {
+                        statusMessage.innerHTML = `<span class="status-badge warning">📥 ${status.git.updates_available} update(s) available</span>`;
+                    } else {
+                        statusMessage.innerHTML = '<span class="status-badge success">✅ Up to date</span>';
+                    }
+                } else {
+                    gitStatusValue.textContent = 'Not available';
+                    gitStatusBadge.textContent = 'N/A';
+                    gitStatusBadge.className = 'status-badge error';
+                    gitStatusCard.className = 'card status-missing';
+                    statusMessage.innerHTML = '<span class="status-badge warning">⚠️ Git not available</span>';
+                }
+
+                // Update updates card
+                if (status.update_available) {
+                    updatesValue.textContent = status.git.updates_available.toString();
+                    updatesBadge.textContent = 'Available';
+                    updatesBadge.className = 'status-badge warning';
+                    updatesCard.className = 'card status-pending';
+                } else {
+                    updatesValue.textContent = '0';
+                    updatesBadge.textContent = 'Current';
+                    updatesBadge.className = 'status-badge success';
+                    updatesCard.className = 'card status-ready';
+                }
+
+                // Update deployment type
+                deploymentValue.textContent = status.server.deployment_type || 'Unknown';
+
+                showToast('✅ System status updated');
+            } catch (error) {
+                console.error('Error checking system status:', error);
+                statusMessage.innerHTML = '<span class="status-badge error">❌ Failed to load status</span>';
+                showToast('Failed to check system status', 'error');
+            }
+        }
+
+        async function updateApplication() {
+            const updateBtn = document.getElementById('update-btn');
+            const updateOutput = document.getElementById('update-output');
+            const updateLog = document.getElementById('update-log');
+
+            if (updateBtn.disabled) return;
+
+            if (!confirm('Pull latest changes from GitHub?\n\nThis will update the application code. A server restart will be required for changes to take effect.')) {
+                return;
+            }
+
+            setButtonLoading(updateBtn, true);
+            updateOutput.style.display = 'block';
+            updateLog.textContent = 'Updating application...\n';
+
+            try {
+                const response = await fetch('/system/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Update failed');
+                }
+
+                const result = await response.json();
+                updateLog.textContent = result.output || 'Update completed';
+
+                if (result.success) {
+                    updateOutput.style.background = '#d1fae5';
+                    updateOutput.style.border = '1px solid #6ee7b7';
+                    showToast('✅ Update completed! Restart server to apply changes.');
+
+                    if (result.requires_restart) {
+                        setTimeout(() => {
+                            if (confirm('Update completed successfully.\n\nRestart server now to apply changes?')) {
+                                restartServer();
+                            }
+                        }, 1000);
+                    }
+                } else {
+                    updateOutput.style.background = '#fee2e2';
+                    updateOutput.style.border = '1px solid #fca5a5';
+                    showToast('Update failed. Check the log for details.', 'error');
+                }
+
+                // Refresh system status
+                await checkSystemStatus();
+
+            } catch (error) {
+                console.error('Update error:', error);
+                updateLog.textContent += `\nError: ${error.message}`;
+                updateOutput.style.background = '#fee2e2';
+                updateOutput.style.border = '1px solid #fca5a5';
+                showToast(error.message || 'Update failed', 'error');
+            } finally {
+                setButtonLoading(updateBtn, false);
+            }
+        }
+
+        async function restartServer() {
+            const restartBtn = document.getElementById('restart-btn');
+            const restartOutput = document.getElementById('restart-output');
+            const restartMessage = document.getElementById('restart-message');
+
+            if (restartBtn.disabled) return;
+
+            if (!confirm('Restart the server?\n\nConnection will be briefly interrupted (5-10 seconds).')) {
+                return;
+            }
+
+            setButtonLoading(restartBtn, true);
+            restartOutput.style.display = 'block';
+            restartMessage.textContent = 'Initiating server restart...';
+
+            try {
+                const response = await fetch('/system/restart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+
+                    if (errorData.requires_manual_restart) {
+                        restartMessage.textContent = errorData.message;
+                        showToast('⚠️ Manual restart required', 'error');
+                        setButtonLoading(restartBtn, false);
+                        return;
+                    }
+
+                    throw new Error(errorData.detail || 'Restart failed');
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    restartMessage.textContent = `${result.message} Reconnecting...`;
+                    showToast('🔄 Server restarting... Page will reload.');
+
+                    // Wait for server to restart and reconnect
+                    let retries = 0;
+                    const maxRetries = 30;
+                    const checkInterval = setInterval(async () => {
+                        try {
+                            const healthResponse = await fetch('/health');
+                            if (healthResponse.ok) {
+                                clearInterval(checkInterval);
+                                showToast('✅ Server restarted successfully!');
+                                setTimeout(() => location.reload(), 1000);
+                            }
+                        } catch (e) {
+                            retries++;
+                            if (retries >= maxRetries) {
+                                clearInterval(checkInterval);
+                                restartMessage.textContent = 'Server restart taking longer than expected. Please refresh manually.';
+                                setButtonLoading(restartBtn, false);
+                            }
+                        }
+                    }, 1000);
+                } else {
+                    restartMessage.textContent = result.message || 'Restart failed';
+                    showToast('Restart failed', 'error');
+                    setButtonLoading(restartBtn, false);
+                }
+
+            } catch (error) {
+                console.error('Restart error:', error);
+                restartMessage.textContent = `Error: ${error.message}`;
+                showToast(error.message || 'Restart failed', 'error');
+                setButtonLoading(restartBtn, false);
+            }
+        }
+
+        async function updateAndRestart() {
+            const updateRestartBtn = document.getElementById('update-restart-btn');
+
+            if (updateRestartBtn.disabled) return;
+
+            if (!confirm('Update and restart?\n\nThis will:\n1. Pull latest changes from GitHub\n2. Restart the server\n\nConnection will be briefly interrupted.')) {
+                return;
+            }
+
+            setButtonLoading(updateRestartBtn, true);
+            const updateOutput = document.getElementById('update-output');
+            const updateLog = document.getElementById('update-log');
+
+            updateOutput.style.display = 'block';
+            updateLog.textContent = 'Updating application...\n';
+
+            try {
+                const response = await fetch('/system/update-and-restart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Operation failed');
+                }
+
+                const result = await response.json();
+
+                if (result.update_result) {
+                    updateLog.textContent = result.update_result.output || 'Update completed\n';
+                }
+
+                if (result.success) {
+                    if (result.restart_skipped) {
+                        updateOutput.style.background = '#dbeafe';
+                        updateOutput.style.border = '1px solid #93c5fd';
+                        showToast('ℹ️ Already up to date, no restart needed');
+                        setButtonLoading(updateRestartBtn, false);
+                    } else {
+                        updateLog.textContent += '\nRestarting server...';
+                        showToast('🔄 Updated! Server restarting...');
+
+                        // Wait for server to restart
+                        let retries = 0;
+                        const maxRetries = 30;
+                        const checkInterval = setInterval(async () => {
+                            try {
+                                const healthResponse = await fetch('/health');
+                                if (healthResponse.ok) {
+                                    clearInterval(checkInterval);
+                                    showToast('✅ Update & restart complete!');
+                                    setTimeout(() => location.reload(), 1000);
+                                }
+                            } catch (e) {
+                                retries++;
+                                if (retries >= maxRetries) {
+                                    clearInterval(checkInterval);
+                                    updateLog.textContent += '\n\nRestart taking longer than expected. Please refresh manually.';
+                                    setButtonLoading(updateRestartBtn, false);
+                                }
+                            }
+                        }, 1000);
+                    }
+                } else {
+                    updateOutput.style.background = '#fee2e2';
+                    updateOutput.style.border = '1px solid #fca5a5';
+                    showToast('Operation failed', 'error');
+                    setButtonLoading(updateRestartBtn, false);
+                }
+
+            } catch (error) {
+                console.error('Update and restart error:', error);
+                updateLog.textContent += `\nError: ${error.message}`;
+                updateOutput.style.background = '#fee2e2';
+                updateOutput.style.border = '1px solid #fca5a5';
+                showToast(error.message || 'Operation failed', 'error');
+                setButtonLoading(updateRestartBtn, false);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            attachFilters();
+            updateCounts();
+            // Load database status on page load
+            refreshDatabaseStatus();
+            // Check system status on page load
+            checkSystemStatus();
+            // Update time immediately and then every minute
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 60000);
+        });
+    </script>
+</body>
+</html>

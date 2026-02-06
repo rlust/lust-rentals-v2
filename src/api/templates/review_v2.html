@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Review - Lust Rentals V2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #f1f5f9;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: var(--dark);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: var(--light-gray);
+            color: var(--gray);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .tab:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        /* Stats */
+        .stats {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        /* Main Content */
+        .content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--light-gray);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--light-gray);
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #fafafa;
+        }
+
+        tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Form Elements */
+        select, input {
+            padding: 0.5rem 0.75rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: border-color 0.3s;
+            width: 100%;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--secondary), #059669);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: var(--white);
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+            animation: slideIn 0.3s;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Actions Bar */
+        .actions-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .actions-bar .spacer {
+            flex: 1;
+        }
+
+        /* Loading */
+        .spinner {
+            border: 3px solid var(--light-gray);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+            display: none;
+        }
+
+        .spinner.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .tabs {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .tab {
+                text-align: center;
+            }
+
+            table {
+                font-size: 0.875rem;
+            }
+
+            thead th, tbody td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .amount-cell {
+            font-weight: 600;
+            color: var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Global Navigation -->
+        <nav class="global-nav" id="globalNav">
+            <div class="nav-header">
+                <a href="/dashboard-v2" class="nav-brand">
+                    <span class="nav-brand-icon">&#127969;</span>
+                    <span>
+                        <span class="nav-brand-text">Lust Rentals</span>
+                        <span class="nav-brand-sub">Tax Reporting</span>
+                    </span>
+                </a>
+                <button class="nav-toggle" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Toggle navigation">
+                    &#9776;
+                </button>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-group">
+                    <span class="nav-group-label">Main</span>
+                    <a href="/dashboard-v2" class="nav-link">
+                        <span class="nav-link-icon">&#128200;</span>
+                        Dashboard
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Review</span>
+                    <a href="/review-enhanced" class="nav-link">
+                        <span class="nav-link-icon">&#10024;</span>
+                        Review Transactions
+                    </a>
+                    <a href="/review" class="nav-link active">
+                        <span class="nav-link-icon">&#128269;</span>
+                        Classic Review
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Manage</span>
+                    <a href="/transactions" class="nav-link">
+                        <span class="nav-link-icon">&#128188;</span>
+                        Transactions
+                    </a>
+                    <a href="/properties-ui" class="nav-link">
+                        <span class="nav-link-icon">&#127970;</span>
+                        Properties
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Tools</span>
+                    <a href="/docs" class="nav-link" target="_blank">
+                        <span class="nav-link-icon">&#128218;</span>
+                        API Docs
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>&#128269; Transaction Review</h1>
+                <p style="color: var(--gray); margin-top: 0.5rem;">Categorize and assign properties to transactions</p>
+            </div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('income')">&#128176; Unassigned Income</button>
+                <button class="tab" onclick="switchTab('expenses')">&#128200; Unassigned Expenses</button>
+                <button class="tab" onclick="switchTab('all-income')">&#128202; All Income</button>
+                <button class="tab" onclick="switchTab('all-expenses')">&#128203; All Expenses</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label" id="stat-label">Pending Review</div>
+                <div class="stat-value" id="pending-count">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total Amount</div>
+                <div class="stat-value" id="total-amount">$0.00</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total Items</div>
+                <div class="stat-value" id="selected-count">0</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Info Banner -->
+            <div style="background: #dbeafe; border-left: 4px solid var(--primary); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                <strong style="color: var(--primary);">💡 How it works:</strong>
+                <span style="color: var(--dark);">
+                    Make your changes below, then click <strong>"💾🔄 Save & Re-Process"</strong> to automatically save and apply changes to your reports.
+                    Or use <strong>"💾 Save Changes"</strong> to save without reprocessing.
+                </span>
+            </div>
+
+            <div id="alert" class="alert"></div>
+
+            <!-- Actions Bar -->
+            <div class="actions-bar">
+                <button class="btn btn-success" onclick="saveChanges()">
+                    💾 Save Changes
+                </button>
+                <button class="btn btn-primary" onclick="saveAndReprocess()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    💾🔄 Save & Re-Process
+                </button>
+                <button class="btn btn-secondary" onclick="location.href='/'">
+                    ← Back to Dashboard
+                </button>
+                <div class="spacer"></div>
+                <span id="changes-indicator" style="color: var(--gray); font-weight: 600;"></span>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="spinner" id="loading-spinner"></div>
+
+            <!-- Income Table -->
+            <div id="income-section" class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Date</th>
+                            <th style="width: 120px;">Amount</th>
+                            <th>Description</th>
+                            <th style="width: 200px;">Property</th>
+                            <th style="width: 150px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="income-tbody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Expenses Table -->
+            <div id="expenses-section" class="table-container" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Date</th>
+                            <th style="width: 120px;">Amount</th>
+                            <th>Description</th>
+                            <th style="width: 180px;">Category</th>
+                            <th style="width: 180px;">Property</th>
+                            <th style="width: 120px;">Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenses-tbody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared utilities -->
+    <script src="/static/js/api-client.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/date-utils.js"></script>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentTab = 'income';
+        let incomeData = [];
+        let expensesData = [];
+        let allIncomeData = [];
+        let allExpensesData = [];
+        let properties = [];
+        let categories = [];
+        let pendingChanges = {
+            income: new Map(),
+            expenses: new Map()
+        };
+
+        // HTML Sanitization utilities (XSS protection)
+        function sanitizeHTML(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text; // Uses browser's built-in escaping
+            return div.innerHTML;
+        }
+
+        function sanitizeAmount(amount) {
+            // Ensure amount is a number
+            const num = parseFloat(amount);
+            return isNaN(num) ? '0.00' : num.toFixed(2);
+        }
+
+        // Debug logging utility (disabled in production)
+        const DEBUG = false; // Set to true for development debugging
+        const debug = {
+            log: (...args) => DEBUG && console.log(...args),
+            warn: (...args) => DEBUG && console.warn(...args),
+            error: (...args) => console.error(...args) // Always log errors
+        };
+
+        // Load on page load
+        window.addEventListener('load', async () => {
+            await loadProperties();
+            await loadCategories();
+            await loadIncome();
+        });
+
+        // Switch tabs
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update stat label based on tab
+            const statLabel = document.getElementById('stat-label');
+            if (tab === 'income' || tab === 'expenses') {
+                statLabel.textContent = 'Pending Review';
+            } else {
+                statLabel.textContent = 'Total Count';
+            }
+
+            // Show/hide sections and load data
+            if (tab === 'income') {
+                document.getElementById('income-section').style.display = 'block';
+                document.getElementById('expenses-section').style.display = 'none';
+                if (incomeData.length === 0) {
+                    loadIncome();
+                } else {
+                    renderIncomeTable();
+                }
+            } else if (tab === 'expenses') {
+                document.getElementById('income-section').style.display = 'none';
+                document.getElementById('expenses-section').style.display = 'block';
+                if (expensesData.length === 0) {
+                    loadExpenses();
+                } else {
+                    renderExpensesTable();
+                }
+            } else if (tab === 'all-income') {
+                document.getElementById('income-section').style.display = 'block';
+                document.getElementById('expenses-section').style.display = 'none';
+                loadAllIncome();
+            } else if (tab === 'all-expenses') {
+                document.getElementById('income-section').style.display = 'none';
+                document.getElementById('expenses-section').style.display = 'block';
+                loadAllExpenses();
+            }
+
+            updateStats();
+        }
+
+        // Load properties
+        async function loadProperties() {
+            try {
+                const response = await fetch(`${API_BASE}/review/properties`);
+                properties = await response.json();
+            } catch (error) {
+                console.error('Failed to load properties:', error);
+                properties = ['118 W Shields St', '41 26th St', '966 Kinsbury Court'];
+            }
+        }
+
+        // Load categories
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/review/categories`);
+                categories = await response.json();
+            } catch (error) {
+                console.error('Failed to load categories:', error);
+            }
+        }
+
+        // Load income data
+        async function loadIncome() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/review/income`);
+                incomeData = await response.json();
+                renderIncomeTable();
+                updateStats();
+            } catch (error) {
+                showAlert(`Error loading income: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load expenses data
+        async function loadExpenses() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/review/expenses`);
+                expensesData = await response.json();
+                renderExpensesTable();
+                updateStats();
+            } catch (error) {
+                showAlert(`Error loading expenses: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load ALL income transactions (assigned and unassigned)
+        async function loadAllIncome() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/review/income/all`);
+                const result = await response.json();
+                // Handle paginated response format (data property) or legacy array format
+                allIncomeData = result.data || result;
+                incomeData = allIncomeData; // Use same rendering logic
+                renderIncomeTable();
+                updateStats();
+            } catch (error) {
+                showAlert(`Error loading all income: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load ALL expense transactions (assigned and unassigned)
+        async function loadAllExpenses() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/review/expenses/all`);
+                const result = await response.json();
+                // Handle paginated response format (data property) or legacy array format
+                allExpensesData = result.data || result;
+                expensesData = allExpensesData; // Use same rendering logic
+                renderExpensesTable();
+                updateStats();
+            } catch (error) {
+                showAlert(`Error loading all expenses: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Render income table
+        function renderIncomeTable() {
+            const tbody = document.getElementById('income-tbody');
+
+            if (incomeData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <h3>🎉 All Done!</h3>
+                                <p>No income transactions need review</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = incomeData.map(item => {
+                const desc = sanitizeHTML(item.description || '');
+                const memo = sanitizeHTML(item.memo || '');
+                const amount = sanitizeAmount(item.amount);
+                const txnId = sanitizeHTML(item.transaction_id);
+
+                return `
+                    <tr>
+                        <td>${formatDate(item.date)}</td>
+                        <td class="amount-cell">$${amount}</td>
+                        <td>${desc}<br><small style="color: var(--gray);">${memo}</small></td>
+                        <td>
+                            <select onchange="handleIncomeChange('${txnId}', this.value)">
+                                <option value="">Select Property...</option>
+                                ${properties.map(p => {
+                                    const propSafe = sanitizeHTML(p);
+                                    const selected = item.property_name === p ? 'selected' : '';
+                                    return `<option value="${propSafe}" ${selected}>${propSafe}</option>`;
+                                }).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            ${getStatusBadge(item.mapping_status)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Render expenses table
+        function renderExpensesTable() {
+            const tbody = document.getElementById('expenses-tbody');
+
+            if (expensesData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <h3>🎉 All Done!</h3>
+                                <p>No expense transactions need review</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = expensesData.map(item => {
+                const desc = sanitizeHTML(item.description || '');
+                const memo = sanitizeHTML(item.memo || '');
+                const amount = sanitizeAmount(item.amount);
+                const txnId = sanitizeHTML(item.transaction_id);
+
+                return `
+                    <tr>
+                        <td>${formatDate(item.date)}</td>
+                        <td class="amount-cell">$${amount}</td>
+                        <td>${desc}<br><small style="color: var(--gray);">${memo}</small></td>
+                        <td>
+                            <select onchange="handleExpenseChange('${txnId}', 'category', this.value)">
+                                ${categories.map(c => {
+                                    const catSafe = sanitizeHTML(c);
+                                    const selected = item.category === c ? 'selected' : '';
+                                    return `<option value="${catSafe}" ${selected}>${formatCategory(c)}</option>`;
+                                }).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            <select onchange="handleExpenseChange('${txnId}', 'property', this.value)">
+                                <option value="">N/A</option>
+                                ${properties.map(p => {
+                                    const propSafe = sanitizeHTML(p);
+                                    const selected = item.property_name === p ? 'selected' : '';
+                                    return `<option value="${propSafe}" ${selected}>${propSafe}</option>`;
+                                }).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            ${getConfidenceBadge(item.confidence)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Handle income property change
+        function handleIncomeChange(transactionId, propertyName) {
+            if (!propertyName || propertyName === '') {
+                // Don't track empty selections
+                pendingChanges.income.delete(transactionId);
+                updateChangesIndicator();
+                return;
+            }
+
+            const change = {
+                transaction_id: transactionId,
+                property_name: propertyName,
+                mapping_notes: null
+            };
+
+            pendingChanges.income.set(transactionId, change);
+            debug.log('Income change tracked:', change);
+            debug.log('Total pending income changes:', pendingChanges.income.size);
+            updateChangesIndicator();
+        }
+
+        // Handle expense change
+        function handleExpenseChange(transactionId, field, value) {
+            const existing = pendingChanges.expenses.get(transactionId) || { transaction_id: transactionId };
+
+            if (field === 'category') {
+                existing.category = value;
+            } else if (field === 'property') {
+                existing.property_name = value || null;
+            }
+
+            // Make sure category is set (required field)
+            if (!existing.category) {
+                debug.warn('Expense change missing category:', transactionId);
+                return;
+            }
+
+            pendingChanges.expenses.set(transactionId, existing);
+            debug.log('Expense change tracked:', existing);
+            debug.log('Total pending expense changes:', pendingChanges.expenses.size);
+            updateChangesIndicator();
+        }
+
+        // Save changes
+        async function saveChanges() {
+            const incomeUpdates = Array.from(pendingChanges.income.values());
+            const expenseUpdates = Array.from(pendingChanges.expenses.values());
+
+            if (incomeUpdates.length === 0 && expenseUpdates.length === 0) {
+                showAlert('No changes to save', 'error');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // Save income updates
+                if (incomeUpdates.length > 0) {
+                    const response = await fetch(`${API_BASE}/review/bulk/income`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ updates: incomeUpdates })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to save income changes');
+                }
+
+                // Save expense updates
+                if (expenseUpdates.length > 0) {
+                    const response = await fetch(`${API_BASE}/review/bulk/expenses`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ updates: expenseUpdates })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to save expense changes');
+                }
+
+                const totalUpdates = incomeUpdates.length + expenseUpdates.length;
+                showAlert(
+                    `✅ Successfully saved ${totalUpdates} change${totalUpdates > 1 ? 's' : ''}! ` +
+                    `⚠️ Important: Go to the Dashboard and re-process your transactions to apply these changes to reports.`,
+                    'success'
+                );
+
+                // Clear pending changes
+                pendingChanges.income.clear();
+                pendingChanges.expenses.clear();
+                updateChangesIndicator();
+
+                // Reload data based on current tab
+                if (currentTab === 'income') {
+                    await loadIncome();
+                } else if (currentTab === 'expenses') {
+                    await loadExpenses();
+                } else if (currentTab === 'all-income') {
+                    await loadAllIncome();
+                } else if (currentTab === 'all-expenses') {
+                    await loadAllExpenses();
+                }
+
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Save changes and automatically reprocess
+        async function saveAndReprocess() {
+            const incomeUpdates = Array.from(pendingChanges.income.values());
+            const expenseUpdates = Array.from(pendingChanges.expenses.values());
+
+            debug.log('=== Save & Re-Process Debug ===');
+            debug.log('Income pending changes map:', pendingChanges.income);
+            debug.log('Income updates array:', incomeUpdates);
+            debug.log('Expense pending changes map:', pendingChanges.expenses);
+            debug.log('Expense updates array:', expenseUpdates);
+
+            if (incomeUpdates.length === 0 && expenseUpdates.length === 0) {
+                showAlert('⚠️ No changes to save. Please select properties for income or categories for expenses first.', 'error');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // Step 1: Save the changes
+                if (incomeUpdates.length > 0) {
+                    const response = await fetch(`${API_BASE}/review/bulk/income`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ updates: incomeUpdates })
+                    });
+                    if (!response.ok) throw new Error('Failed to save income changes');
+                }
+
+                if (expenseUpdates.length > 0) {
+                    const response = await fetch(`${API_BASE}/review/bulk/expenses`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ updates: expenseUpdates })
+                    });
+                    if (!response.ok) throw new Error('Failed to save expense changes');
+                }
+
+                const totalUpdates = incomeUpdates.length + expenseUpdates.length;
+                showAlert(
+                    `✅ Step 1/2: Saved ${totalUpdates} change${totalUpdates > 1 ? 's' : ''}! Now re-processing...`,
+                    'success'
+                );
+
+                // Step 2: Get latest file and reprocess
+                const fileResponse = await fetch(`${API_BASE}/files/latest-transaction`);
+                if (!fileResponse.ok) {
+                    throw new Error('Could not find a valid transaction file. Please upload a new file from the dashboard.');
+                }
+                const fileData = await fileResponse.json();
+
+                const processResponse = await fetch(`${API_BASE}/process/bank`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bank_file_path: fileData.file_path,
+                        year: 2025
+                    })
+                });
+
+                if (!processResponse.ok) {
+                    throw new Error('Failed to reprocess transactions');
+                }
+
+                const processResult = await processResponse.json();
+
+                showAlert(
+                    `✅ Step 2/2: Successfully re-processed! ` +
+                    `Income: ${processResult.income_rows}, Expenses: ${processResult.expense_rows}. ` +
+                    `Your changes are now applied to all reports!`,
+                    'success'
+                );
+
+                // Clear pending changes
+                pendingChanges.income.clear();
+                pendingChanges.expenses.clear();
+                updateChangesIndicator();
+
+                // Poll for completion with exponential backoff
+                const pollProcessingStatus = async (maxAttempts = 10, initialDelay = 500) => {
+                    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                        const delay = initialDelay * Math.pow(1.5, attempt); // Exponential backoff
+                        await new Promise(resolve => setTimeout(resolve, delay));
+
+                        try {
+                            const statusResponse = await fetch(`${API_BASE}/process/status`);
+                            if (statusResponse.ok) {
+                                const status = await statusResponse.json();
+                                if (status.ready) {
+                                    return true;
+                                }
+                            }
+                        } catch (e) {
+                            debug.warn(`Status check attempt ${attempt + 1} failed:`, e);
+                        }
+                    }
+                    return false;
+                };
+
+                const ready = await pollProcessingStatus();
+                if (!ready) {
+                    showAlert('⚠️ Processing may still be in progress. Please refresh manually if data is not updated.', 'warning');
+                }
+
+                // Reload data based on current tab
+                if (currentTab === 'income') {
+                    await loadIncome();
+                } else if (currentTab === 'expenses') {
+                    await loadExpenses();
+                } else if (currentTab === 'all-income') {
+                    await loadAllIncome();
+                } else if (currentTab === 'all-expenses') {
+                    await loadAllExpenses();
+                }
+
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            let count = 0;
+            let total = 0;
+
+            if (currentTab === 'income' || currentTab === 'all-income') {
+                count = incomeData.length;
+                total = incomeData.reduce((sum, item) => sum + item.amount, 0);
+            } else {
+                count = expensesData.length;
+                total = expensesData.reduce((sum, item) => sum + item.amount, 0);
+            }
+
+            document.getElementById('pending-count').textContent = count;
+            document.getElementById('total-amount').textContent = `$${total.toFixed(2)}`;
+
+            // For "All" tabs, show total count; for unassigned tabs, show pending changes
+            if (currentTab === 'income' || currentTab === 'expenses') {
+                const selectedCount = currentTab === 'income' ? pendingChanges.income.size : pendingChanges.expenses.size;
+                document.getElementById('selected-count').textContent = selectedCount;
+            } else {
+                document.getElementById('selected-count').textContent = count;
+            }
+        }
+
+        // Update changes indicator
+        function updateChangesIndicator() {
+            const totalChanges = pendingChanges.income.size + pendingChanges.expenses.size;
+            const indicator = document.getElementById('changes-indicator');
+            if (totalChanges > 0) {
+                indicator.textContent = `${totalChanges} unsaved change${totalChanges > 1 ? 's' : ''}`;
+                indicator.style.color = 'var(--warning)';
+            } else {
+                indicator.textContent = '';
+            }
+        }
+
+        // Utility functions
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function formatCategory(cat) {
+            return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'mapping_missing': '<span class="badge badge-danger">Missing</span>',
+                'manual_review': '<span class="badge badge-warning">Review</span>',
+                'overridden': '<span class="badge badge-success">Assigned</span>'
+            };
+            return badges[status] || '<span class="badge badge-warning">Unknown</span>';
+        }
+
+        function getConfidenceBadge(confidence) {
+            if (confidence >= 0.8) {
+                return '<span class="badge badge-success">High</span>';
+            } else if (confidence >= 0.4) {
+                return '<span class="badge badge-warning">Medium</span>';
+            } else {
+                return '<span class="badge badge-danger">Low</span>';
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading-spinner').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-spinner').classList.remove('show');
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 5000);
+        }
+    </script>
+</body>
+</html>

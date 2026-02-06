@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Transaction Review - Lust Rentals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #f1f5f9;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --highlight: #fef3c7;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            padding: 1.5rem 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 1.5rem;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            color: var(--dark);
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        /* Search and Filter Bar */
+        .filter-bar {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto auto;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: var(--light-gray);
+            color: var(--gray);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+        }
+
+        /* Main Content */
+        .content {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Transaction Cards */
+        .transaction-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .transaction-card {
+            background: var(--white);
+            border: 2px solid var(--light-gray);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .transaction-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .transaction-card.selected {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .transaction-card.modified {
+            border-color: var(--warning);
+            background: var(--highlight);
+        }
+
+        .transaction-header {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+        }
+
+        .transaction-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .transaction-desc {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .transaction-memo {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        .transaction-date {
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+
+        .transaction-amount {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        /* Inline Editors */
+        .transaction-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .control-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-select {
+            padding: 0.625rem 0.75rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.3s;
+            background: var(--white);
+        }
+
+        .control-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Bulk Actions Bar */
+        .bulk-actions {
+            background: var(--light-gray);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .bulk-actions.show {
+            display: flex;
+        }
+
+        .bulk-info {
+            flex: 1;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .bulk-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.875rem;
+        }
+
+        .bulk-btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .bulk-btn-secondary {
+            background: var(--gray);
+            color: var(--white);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            background: var(--light-gray);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-bottom: 0.375rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--secondary), #059669);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: var(--white);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+            animation: slideIn 0.3s;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger);
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid var(--primary);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading */
+        .spinner {
+            border: 3px solid var(--light-gray);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+            display: none;
+        }
+
+        .spinner.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Keyboard Shortcuts Help */
+        .shortcuts-hint {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--light-gray);
+            border-radius: 0.5rem;
+        }
+
+        .shortcuts-hint kbd {
+            background: var(--white);
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--gray);
+            font-family: monospace;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .filter-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .transaction-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* === NEW COMPONENTS === */
+
+        /* Toast Notification System */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-width: 400px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInRight 0.3s ease;
+            position: relative;
+            border-left: 4px solid var(--primary);
+            pointer-events: auto;
+        }
+
+        .toast.success {
+            border-left-color: var(--secondary);
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast.info {
+            border-left-color: var(--primary);
+        }
+
+        .toast-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .toast-close {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            padding: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        /* Progress Bar Overlay */
+        .progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-overlay.show {
+            display: flex;
+        }
+
+        .progress-modal {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            min-width: 400px;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .progress-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .progress-title {
+            color: var(--dark);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .progress-stats {
+            color: var(--gray);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 0.75rem;
+            background: var(--light-gray);
+            border-radius: 1rem;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 1rem;
+        }
+
+        .progress-percentage {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Instructions Panel */
+        .instructions-panel {
+            position: fixed;
+            right: 1rem;
+            top: 1rem;
+            width: 320px;
+            background: var(--white);
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+
+        .instructions-panel.collapsed {
+            transform: translateX(calc(100% + 1rem));
+        }
+
+        .instructions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        .instructions-header h3 {
+            font-size: 1rem;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .instructions-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+            padding: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .instructions-toggle:hover {
+            color: var(--primary);
+        }
+
+        .instructions-content {
+            padding: 1rem;
+        }
+
+        .workflow-step h4 {
+            font-size: 0.875rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .step-progress {
+            width: 100%;
+            height: 0.5rem;
+            background: var(--light-gray);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .step-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 0.5rem;
+        }
+
+        .step-stats {
+            font-size: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .priority-stat {
+            padding: 0.375rem;
+            margin-bottom: 0.25rem;
+            border-radius: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .priority-stat.priority-1 {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .priority-stat.priority-2 {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .current-task {
+            margin-bottom: 1rem;
+        }
+
+        .current-task h4 {
+            font-size: 0.875rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .current-task ul {
+            margin-left: 1rem;
+            font-size: 0.75rem;
+            color: var(--gray);
+            line-height: 1.5;
+        }
+
+        .current-task li {
+            margin-bottom: 0.25rem;
+        }
+
+        .keyboard-tips {
+            font-size: 0.75rem;
+            color: var(--gray);
+            padding: 0.75rem;
+            background: var(--light-gray);
+            border-radius: 0.5rem;
+        }
+
+        .keyboard-tips strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .keyboard-tips div {
+            margin-bottom: 0.25rem;
+        }
+
+        /* Priority Badges */
+        .priority-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            position: absolute;
+            top: -0.5rem;
+            right: 1rem;
+            z-index: 10;
+        }
+
+        .priority-badge .priority-number {
+            background: rgba(255, 255, 255, 0.5);
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .priority-1 {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+
+        .priority-2 {
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #f59e0b;
+        }
+
+        .priority-3 {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+
+        /* Card Success States */
+        .transaction-card.saved {
+            border-color: var(--secondary);
+            background: #f0fdf4;
+            animation: successPulse 0.6s ease;
+        }
+
+        .transaction-card.saving {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .success-checkmark {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--secondary);
+            color: var(--white);
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            animation: checkmarkPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 10;
+            box-shadow: var(--shadow);
+        }
+
+        @keyframes successPulse {
+            0%, 100% {
+                border-color: var(--light-gray);
+            }
+            50% {
+                border-color: var(--secondary);
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+            }
+        }
+
+        @keyframes checkmarkPop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Mobile Responsive Updates */
+        @media (max-width: 768px) {
+            .toast-container {
+                left: 0.5rem;
+                right: 0.5rem;
+                max-width: none;
+            }
+
+            .progress-modal {
+                min-width: auto;
+                width: 90vw;
+                padding: 1.5rem;
+            }
+
+            .instructions-panel {
+                position: static;
+                width: 100%;
+                margin-bottom: 1rem;
+                max-height: none;
+            }
+
+            .instructions-panel.collapsed {
+                transform: none;
+                display: none;
+            }
+
+            .priority-badge {
+                font-size: 0.625rem;
+                padding: 0.125rem 0.375rem;
+                top: 0.5rem;
+                right: 0.5rem;
+            }
+
+            .priority-badge .priority-number {
+                width: 1rem;
+                height: 1rem;
+                font-size: 0.625rem;
+            }
+
+            .success-checkmark {
+                width: 1.5rem;
+                height: 1.5rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Global Navigation -->
+        <nav class="global-nav" id="globalNav">
+            <div class="nav-header">
+                <a href="/dashboard-v2" class="nav-brand">
+                    <span class="nav-brand-icon">&#127969;</span>
+                    <span>
+                        <span class="nav-brand-text">Lust Rentals</span>
+                        <span class="nav-brand-sub">Tax Reporting</span>
+                    </span>
+                </a>
+                <button class="nav-toggle" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Toggle navigation">
+                    &#9776;
+                </button>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-group">
+                    <span class="nav-group-label">Main</span>
+                    <a href="/dashboard-v2" class="nav-link">
+                        <span class="nav-link-icon">&#128200;</span>
+                        Dashboard
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Review</span>
+                    <a href="/review-enhanced" class="nav-link active">
+                        <span class="nav-link-icon">&#10024;</span>
+                        Review Transactions
+                    </a>
+                    <a href="/review" class="nav-link">
+                        <span class="nav-link-icon">&#128269;</span>
+                        Classic Review
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Manage</span>
+                    <a href="/transactions" class="nav-link">
+                        <span class="nav-link-icon">&#128188;</span>
+                        Transactions
+                    </a>
+                    <a href="/properties-ui" class="nav-link">
+                        <span class="nav-link-icon">&#127970;</span>
+                        Properties
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Tools</span>
+                    <a href="/docs" class="nav-link" target="_blank">
+                        <span class="nav-link-icon">&#128218;</span>
+                        API Docs
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <div>
+                    <h1>&#10024; Enhanced Transaction Review</h1>
+                    <p style="color: var(--gray); margin-top: 0.5rem;">Modern interface with bulk operations, search, and smart categorization</p>
+                </div>
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('income')">&#128176; Income</button>
+                    <button class="tab" onclick="switchTab('expenses')">&#128200; Expenses</button>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search-input" placeholder="Search transactions by description, amount, or property..." oninput="debouncedFilterTransactions()">
+                </div>
+                <select id="filter-property" onchange="filterTransactions()">
+                    <option value="">All Properties</option>
+                </select>
+                <select id="filter-category" onchange="filterTransactions()" style="display: none;">
+                    <option value="">All Categories</option>
+                </select>
+                <select id="filter-status" onchange="filterTransactions()">
+                    <option value="all">All Status</option>
+                    <option value="unassigned" selected>Unassigned Only</option>
+                    <option value="assigned">Assigned Only</option>
+                </select>
+                <button class="btn btn-secondary" onclick="location.href='/'">← Dashboard</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div id="alert" class="alert"></div>
+
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-label">Total Items</div>
+                    <div class="stat-value" id="stat-total">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Amount</div>
+                    <div class="stat-value" id="stat-amount">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Selected</div>
+                    <div class="stat-value" id="stat-selected">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Unsaved Changes</div>
+                    <div class="stat-value" id="stat-changes">0</div>
+                </div>
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-actions" id="bulk-actions">
+                <div class="bulk-info">
+                    <span id="bulk-count">0</span> items selected
+                </div>
+                <select id="bulk-property" class="control-select" style="width: 200px;">
+                    <option value="">Select Property...</option>
+                </select>
+                <select id="bulk-category" class="control-select" style="width: 200px; display: none;">
+                    <option value="">Select Category...</option>
+                </select>
+                <button class="bulk-btn bulk-btn-primary" onclick="applyBulkChanges()">Apply to Selected</button>
+                <button class="bulk-btn bulk-btn-secondary" onclick="clearSelection()">Clear Selection</button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="selectAll()">☑️ Select All</button>
+                <button class="btn btn-secondary" onclick="selectNone()">⬜ Select None</button>
+                <button class="btn btn-success" onclick="saveChanges()">💾 Save Changes</button>
+                <button class="btn btn-primary" onclick="saveAndReprocess()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    💾🔄 Save & Re-Process
+                </button>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="spinner" id="loading-spinner"></div>
+
+            <!-- Transaction Grid -->
+            <div class="transaction-grid" id="transaction-grid"></div>
+
+            <!-- Keyboard Shortcuts -->
+            <div class="shortcuts-hint">
+                <strong>⌨️ Keyboard Shortcuts:</strong>
+                <kbd>Space</kbd> Select/Deselect •
+                <kbd>Ctrl+A</kbd> Select All •
+                <kbd>Ctrl+S</kbd> Save •
+                <kbd>/</kbd> Focus Search
+            </div>
+        </div>
+
+        <!-- Instructions Panel -->
+        <div class="instructions-panel" id="instructions-panel">
+            <div class="instructions-header">
+                <h3>📋 Review Workflow Guide</h3>
+                <button class="instructions-toggle" onclick="toggleInstructions()">−</button>
+            </div>
+            <div class="instructions-content" id="instructions-content">
+                <div class="workflow-step">
+                    <h4 id="step-title">Processing Workflow</h4>
+                    <div class="step-progress">
+                        <div class="step-progress-bar" id="step-progress-bar"></div>
+                    </div>
+                    <div class="step-stats" id="step-stats"></div>
+                </div>
+                <div class="current-task" id="current-task">
+                    <!-- Dynamic content based on tab -->
+                </div>
+                <div class="keyboard-tips">
+                    <strong>Keyboard Shortcuts:</strong>
+                    <div>Space - Select item</div>
+                    <div>Ctrl+S - Save changes</div>
+                    <div>/ - Focus search</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Overlay -->
+    <div id="progress-overlay" class="progress-overlay">
+        <div class="progress-modal">
+            <div class="progress-icon">💾</div>
+            <h3 class="progress-title">Saving Changes...</h3>
+            <div class="progress-stats">
+                <span id="progress-text">Preparing to save...</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progress-bar-fill"></div>
+            </div>
+            <div class="progress-percentage" id="progress-percentage">0%</div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Shared utilities (available for future use) -->
+    <script src="/static/js/api-client.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/date-utils.js"></script>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentTab = 'income';
+        let allTransactions = [];
+        let filteredTransactions = [];
+        let selectedIds = new Set();
+        let pendingChanges = new Map();
+        let properties = [];
+        let categories = [];
+        const savedTransactions = new Set(); // Track successfully saved transactions
+
+        // Debounce utility function - delays execution until after wait ms have elapsed
+        function debounce(func, wait = 300) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Create debounced version of filterTransactions for search input
+        const debouncedFilterTransactions = debounce(filterTransactions, 300);
+
+        // Toast notification system
+        let toastIdCounter = 0;
+
+        function showToast(message, type = 'info', duration = 4000) {
+            const toastId = toastIdCounter++;
+            const container = document.getElementById('toast-container');
+
+            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.id = `toast-${toastId}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="dismissToast(${toastId})">×</button>
+            `;
+
+            container.appendChild(toast);
+
+            if (duration > 0) {
+                setTimeout(() => dismissToast(toastId), duration);
+            }
+
+            return toastId;
+        }
+
+        function dismissToast(toastId) {
+            const toast = document.getElementById(`toast-${toastId}`);
+            if (!toast) return;
+            toast.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }
+
+        // Progress bar system
+        let progressState = { total: 0, current: 0, isVisible: false };
+
+        function showProgress(total, message = 'Saving Changes...') {
+            progressState = { total, current: 0, isVisible: true };
+            const overlay = document.getElementById('progress-overlay');
+            overlay.querySelector('.progress-title').textContent = message;
+            overlay.classList.add('show');
+            updateProgressBar();
+        }
+
+        function updateProgress(current, message = null) {
+            progressState.current = current;
+            if (message) {
+                document.getElementById('progress-text').textContent = message;
+            }
+            updateProgressBar();
+            if (current >= progressState.total) {
+                setTimeout(hideProgress, 500);
+            }
+        }
+
+        function updateProgressBar() {
+            const percentage = Math.round((progressState.current / progressState.total) * 100);
+            document.getElementById('progress-bar-fill').style.width = `${percentage}%`;
+            document.getElementById('progress-percentage').textContent = `${percentage}%`;
+            document.getElementById('progress-text').textContent =
+                `${progressState.current} of ${progressState.total} transactions saved`;
+        }
+
+        function hideProgress() {
+            document.getElementById('progress-overlay').classList.remove('show');
+            progressState.isVisible = false;
+        }
+
+        // Priority calculation and sorting
+        function calculatePriority(tx) {
+            if (currentTab === 'income') {
+                if (!tx.property_name || tx.property_name === 'UNASSIGNED') return 1;
+                if (tx.mapping_status === 'overridden') return 2;
+                return 3;
+            } else {
+                // For expenses: only category is required, property is optional
+                if (!tx.category) return 1;
+                if (tx.confidence < 0.6 || tx.category === 'other') return 2;
+                if (tx.confidence < 0.8) return 3;
+                return 4;
+            }
+        }
+
+        function sortByPriority(transactions) {
+            return [...transactions].sort((a, b) => {
+                const priorityDiff = calculatePriority(a) - calculatePriority(b);
+                if (priorityDiff !== 0) return priorityDiff;
+                return new Date(b.date) - new Date(a.date);
+            });
+        }
+
+        function getPriorityLabel(priority) {
+            const labels = {
+                1: 'Action Required',
+                2: 'Review Needed',
+                3: 'Low Priority',
+                4: 'Completed'
+            };
+            return labels[priority] || '';
+        }
+
+        // Instructions panel
+        const incomeInstructions = {
+            tips: [
+                "Assign property to income items",
+                "Look for property names in memos",
+                "Use bulk select for similar items",
+                "Priority 1 items (red) need immediate attention"
+            ]
+        };
+
+        const expenseInstructions = {
+            tips: [
+                "Categorize uncategorized expenses first",
+                "Verify low-confidence AI suggestions",
+                "Add property assignment if applicable",
+                "Priority 1 items (red) need immediate attention"
+            ]
+        };
+
+        function initInstructionsPanel() {
+            const collapsed = localStorage.getItem('instructionsCollapsed') === 'true';
+            if (collapsed) {
+                document.getElementById('instructions-panel').classList.add('collapsed');
+            }
+            updateInstructionsContent();
+            updateInstructionsProgress();
+        }
+
+        function toggleInstructions() {
+            const panel = document.getElementById('instructions-panel');
+            panel.classList.toggle('collapsed');
+            localStorage.setItem('instructionsCollapsed', panel.classList.contains('collapsed'));
+        }
+
+        function updateInstructionsProgress() {
+            const stats = calculateWorkflowStats();
+            document.getElementById('step-stats').innerHTML = `
+                <div class="priority-stat priority-1">
+                    ${stats.priority1 > 0 ? '→' : '✓'} Priority 1: ${stats.priority1} items
+                </div>
+                <div class="priority-stat priority-2">
+                    ${stats.priority2 > 0 ? '→' : '✓'} Priority 2: ${stats.priority2} items
+                </div>
+            `;
+
+            const total = stats.total || 1; // Avoid division by zero
+            const progress = ((total - stats.priority1 - stats.priority2) / total) * 100;
+            document.getElementById('step-progress-bar').style.width = `${Math.max(0, progress)}%`;
+        }
+
+        function calculateWorkflowStats() {
+            const stats = { priority1: 0, priority2: 0, priority3: 0, total: 0 };
+            filteredTransactions.forEach(tx => {
+                const priority = calculatePriority(tx);
+                stats.total++;
+                if (priority === 1) stats.priority1++;
+                else if (priority === 2) stats.priority2++;
+                else stats.priority3++;
+            });
+            return stats;
+        }
+
+        function updateInstructionsContent() {
+            const content = currentTab === 'income' ? incomeInstructions : expenseInstructions;
+            document.getElementById('current-task').innerHTML = `
+                <h4>Current Task:</h4>
+                <ul>
+                    ${content.tips.map(tip => `<li>${tip}</li>`).join('')}
+                </ul>
+            `;
+        }
+
+        // Load on page load
+        window.addEventListener('load', async () => {
+            await loadProperties();
+            await loadCategories();
+            await loadData();
+            setupKeyboardShortcuts();
+            initInstructionsPanel();
+        });
+
+        // Load properties
+        async function loadProperties() {
+            try {
+                const response = await fetch(`${API_BASE}/review/properties`);
+                properties = await response.json();
+
+                // Populate property filters and bulk select
+                const filterSelect = document.getElementById('filter-property');
+                const bulkSelect = document.getElementById('bulk-property');
+
+                properties.forEach(p => {
+                    filterSelect.add(new Option(p, p));
+                    bulkSelect.add(new Option(p, p));
+                });
+            } catch (error) {
+                console.error('Failed to load properties:', error);
+            }
+        }
+
+        // Load categories
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/review/categories`);
+                categories = await response.json();
+
+                const filterSelect = document.getElementById('filter-category');
+                const bulkSelect = document.getElementById('bulk-category');
+
+                categories.forEach(c => {
+                    const label = formatCategory(c);
+                    filterSelect.add(new Option(label, c));
+                    bulkSelect.add(new Option(label, c));
+                });
+            } catch (error) {
+                console.error('Failed to load categories:', error);
+            }
+        }
+
+        // Load data based on current tab
+        async function loadData() {
+            showLoading();
+            try {
+                const endpoint = currentTab === 'income' ? '/review/income/all' : '/review/expenses/all';
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                const result = await response.json();
+
+                // Handle paginated response format (data property) or legacy array format
+                allTransactions = result.data || result;
+
+                filterTransactions();
+                updateStats();
+            } catch (error) {
+                showAlert(`Error loading data: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Apply optimistic updates to local state without reloading from server
+        function applyOptimisticUpdates(updates) {
+            // Save current scroll position
+            const scrollContainer = document.querySelector('.grid-container') || window;
+            const scrollY = scrollContainer === window ? window.scrollY : scrollContainer.scrollTop;
+
+            // Create a map for quick lookup
+            const updateMap = new Map(updates.map(u => [u.transaction_id, u]));
+
+            // Update allTransactions with the saved changes
+            allTransactions = allTransactions.map(tx => {
+                const update = updateMap.get(tx.transaction_id);
+                if (update) {
+                    // Merge the update into the transaction
+                    return {
+                        ...tx,
+                        property_name: update.property_name || tx.property_name,
+                        category: update.category || tx.category,
+                        mapping_status: 'overridden',
+                        category_status: 'overridden'
+                    };
+                }
+                return tx;
+            });
+
+            // Re-filter and re-render with preserved state
+            filterTransactions();
+            updateStats();
+
+            // Restore scroll position after render
+            requestAnimationFrame(() => {
+                if (scrollContainer === window) {
+                    window.scrollTo(0, scrollY);
+                } else {
+                    scrollContainer.scrollTop = scrollY;
+                }
+            });
+        }
+
+        // Switch tabs
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Show/hide category filter
+            const categoryFilter = document.getElementById('filter-category');
+            const bulkCategory = document.getElementById('bulk-category');
+            if (tab === 'expenses') {
+                categoryFilter.style.display = 'block';
+                bulkCategory.style.display = 'block';
+            } else {
+                categoryFilter.style.display = 'none';
+                bulkCategory.style.display = 'none';
+            }
+
+            // Clear state
+            selectedIds.clear();
+            pendingChanges.clear();
+            savedTransactions.clear(); // Clear saved state when switching tabs
+
+            // Update instructions panel
+            updateInstructionsContent();
+
+            loadData();
+        }
+
+        // Filter transactions
+        function filterTransactions() {
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+            const filterProperty = document.getElementById('filter-property').value;
+            const filterCategory = document.getElementById('filter-category').value;
+            const filterStatus = document.getElementById('filter-status').value;
+
+            filteredTransactions = allTransactions.filter(tx => {
+                // Search filter
+                const matchesSearch = !searchText ||
+                    (tx.description && tx.description.toLowerCase().includes(searchText)) ||
+                    (tx.memo && tx.memo.toLowerCase().includes(searchText)) ||
+                    (tx.amount && tx.amount.toString().includes(searchText)) ||
+                    (tx.property_name && tx.property_name.toLowerCase().includes(searchText));
+
+                // Property filter
+                const matchesProperty = !filterProperty || tx.property_name === filterProperty;
+
+                // Category filter (expenses only)
+                const matchesCategory = !filterCategory || tx.category === filterCategory;
+
+                // Status filter
+                let matchesStatus = true;
+                if (filterStatus === 'unassigned') {
+                    matchesStatus = !tx.property_name || tx.property_name === 'UNASSIGNED' ||
+                        (currentTab === 'expenses' && (!tx.category || !tx.property_name));
+                } else if (filterStatus === 'assigned') {
+                    matchesStatus = tx.property_name && tx.property_name !== 'UNASSIGNED' &&
+                        (currentTab === 'income' || (tx.category && tx.property_name));
+                }
+
+                return matchesSearch && matchesProperty && matchesCategory && matchesStatus;
+            });
+
+            renderTransactions();
+            updateStats();
+        }
+
+        // Render transactions
+        function renderTransactions() {
+            const grid = document.getElementById('transaction-grid');
+
+            if (filteredTransactions.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>🎉 All Done!</h3>
+                        <p>No transactions match your current filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by priority before rendering
+            const sortedTransactions = sortByPriority(filteredTransactions);
+            grid.innerHTML = sortedTransactions.map(tx => createTransactionCard(tx)).join('');
+
+            // Update instructions panel
+            updateInstructionsProgress();
+        }
+
+        // Create transaction card
+        function createTransactionCard(tx) {
+            const isSelected = selectedIds.has(tx.transaction_id);
+            const isModified = pendingChanges.has(tx.transaction_id);
+            const isSaved = savedTransactions.has(tx.transaction_id);
+            const change = pendingChanges.get(tx.transaction_id) || {};
+
+            const displayProperty = change.property_name !== undefined ? change.property_name : tx.property_name;
+            const displayCategory = change.category !== undefined ? change.category : tx.category;
+
+            // Calculate priority
+            const priority = calculatePriority(tx);
+
+            let statusBadge = '';
+            if (isModified) {
+                statusBadge = '<span class="badge badge-warning">Modified</span>';
+            } else if (tx.mapping_status === 'overridden' || (tx.property_name && tx.property_name !== 'UNASSIGNED')) {
+                statusBadge = '<span class="badge badge-success">Assigned</span>';
+            } else {
+                statusBadge = '<span class="badge badge-danger">Unassigned</span>';
+            }
+
+            const cardClass = `transaction-card ${isSelected ? 'selected' : ''} ${isModified ? 'modified' : ''} ${isSaved ? 'saved' : ''}`;
+
+            if (currentTab === 'income') {
+                return `
+                    <div class="${cardClass}" data-id="${tx.transaction_id}">
+                        ${priority <= 2 ? `
+                            <div class="priority-badge priority-${priority}">
+                                <span class="priority-number">${priority}</span>
+                                <span class="priority-label">${getPriorityLabel(priority)}</span>
+                            </div>
+                        ` : ''}
+                        ${isSaved ? '<div class="success-checkmark">✓</div>' : ''}
+                        <div class="transaction-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" ${isSelected ? 'checked' : ''}
+                                    onchange="toggleSelection('${tx.transaction_id}')">
+                            </div>
+                            <div class="transaction-info">
+                                <div class="transaction-desc">${tx.description || 'No description'}</div>
+                                ${tx.memo ? `<div class="transaction-memo">${tx.memo}</div>` : ''}
+                            </div>
+                            <div class="transaction-date">${formatDate(tx.date)}</div>
+                            <div class="transaction-amount">$${tx.amount.toFixed(2)}</div>
+                        </div>
+                        <div class="transaction-controls">
+                            <div class="control-group">
+                                <label class="control-label">Property ${statusBadge}</label>
+                                <select class="control-select"
+                                    onchange="handleChange('${tx.transaction_id}', 'property', this.value)">
+                                    <option value="">Select Property...</option>
+                                    ${properties.map(p => `
+                                        <option value="${p}" ${displayProperty === p ? 'selected' : ''}>${p}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const confidenceBadge = tx.confidence >= 0.8 ?
+                    '<span class="badge badge-success">High Confidence</span>' :
+                    tx.confidence >= 0.4 ?
+                    '<span class="badge badge-warning">Medium Confidence</span>' :
+                    '<span class="badge badge-danger">Low Confidence</span>';
+
+                return `
+                    <div class="${cardClass}" data-id="${tx.transaction_id}">
+                        ${priority <= 2 ? `
+                            <div class="priority-badge priority-${priority}">
+                                <span class="priority-number">${priority}</span>
+                                <span class="priority-label">${getPriorityLabel(priority)}</span>
+                            </div>
+                        ` : ''}
+                        ${isSaved ? '<div class="success-checkmark">✓</div>' : ''}
+                        <div class="transaction-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" ${isSelected ? 'checked' : ''}
+                                    onchange="toggleSelection('${tx.transaction_id}')">
+                            </div>
+                            <div class="transaction-info">
+                                <div class="transaction-desc">${tx.description || 'No description'}</div>
+                                ${tx.memo ? `<div class="transaction-memo">${tx.memo}</div>` : ''}
+                            </div>
+                            <div class="transaction-date">${formatDate(tx.date)}</div>
+                            <div class="transaction-amount">$${tx.amount.toFixed(2)}</div>
+                        </div>
+                        <div class="transaction-controls">
+                            <div class="control-group">
+                                <label class="control-label">Category ${confidenceBadge}</label>
+                                <select class="control-select"
+                                    onchange="handleChange('${tx.transaction_id}', 'category', this.value)">
+                                    <option value="">Select Category...</option>
+                                    ${categories.map(c => `
+                                        <option value="${c}" ${displayCategory === c ? 'selected' : ''}>${formatCategory(c)}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Property ${statusBadge}</label>
+                                <select class="control-select"
+                                    onchange="handleChange('${tx.transaction_id}', 'property', this.value)">
+                                    <option value="">N/A</option>
+                                    ${properties.map(p => `
+                                        <option value="${p}" ${displayProperty === p ? 'selected' : ''}>${p}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Real-time validation - show visual feedback immediately
+        function validateFieldRealTime(transactionId, field, value) {
+            const card = document.querySelector(`[data-id="${transactionId}"]`);
+            if (!card) return true;
+
+            let isValid = true;
+            let fieldElement = null;
+
+            if (field === 'property') {
+                fieldElement = card.querySelector('select[onchange*="property"]');
+                // For income, property is required
+                if (currentTab === 'income' && (!value || value.trim() === '')) {
+                    isValid = false;
+                }
+            } else if (field === 'category') {
+                fieldElement = card.querySelector('select[onchange*="category"]');
+                // For expenses, category is required
+                if (!value || value.trim() === '') {
+                    isValid = false;
+                }
+            }
+
+            // Update visual state
+            if (fieldElement) {
+                if (isValid) {
+                    fieldElement.classList.remove('field-error');
+                    fieldElement.style.borderColor = '';
+                } else {
+                    fieldElement.classList.add('field-error');
+                    fieldElement.style.borderColor = 'var(--danger, #ef4444)';
+                }
+            }
+
+            // Update save button state
+            updateSaveButtonState();
+
+            return isValid;
+        }
+
+        // Check if there are any invalid pending changes
+        function hasInvalidChanges() {
+            for (const [transactionId, change] of pendingChanges) {
+                if (currentTab === 'income') {
+                    if (!change.property_name || change.property_name.trim() === '') {
+                        return true;
+                    }
+                } else if (currentTab === 'expenses') {
+                    if (!change.category || change.category.trim() === '') {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Update save button state based on validation
+        function updateSaveButtonState() {
+            const saveBtn = document.querySelector('button[onclick*="saveChanges"]');
+            if (saveBtn) {
+                if (hasInvalidChanges()) {
+                    saveBtn.style.opacity = '0.5';
+                    saveBtn.title = 'Fix validation errors before saving';
+                } else {
+                    saveBtn.style.opacity = '';
+                    saveBtn.title = '';
+                }
+            }
+        }
+
+        // Handle change
+        function handleChange(transactionId, field, value) {
+            // Get the original transaction data
+            const originalTx = allTransactions.find(tx => tx.transaction_id === transactionId);
+            if (!originalTx) {
+                console.error(`Transaction not found: ${transactionId}`);
+                return;
+            }
+
+            // Get existing pending changes or create new object with all current data
+            const existing = pendingChanges.get(transactionId) || {
+                transaction_id: transactionId,
+                // Preserve existing data from the transaction
+                ...(currentTab === 'expenses' && { category: originalTx.category }),
+                ...(originalTx.property_name && { property_name: originalTx.property_name })
+            };
+
+            if (field === 'property') {
+                existing.property_name = value || null;
+                if (value) {
+                    showToast(`Property set to: ${value}`, 'info', 2000);
+                }
+            } else if (field === 'category') {
+                existing.category = value;
+                if (value) {
+                    showToast(`Category set to: ${formatCategory(value)}`, 'info', 2000);
+                }
+            }
+
+            pendingChanges.set(transactionId, existing);
+
+            // Real-time validation
+            validateFieldRealTime(transactionId, field, value);
+
+            renderTransactions();
+            updateStats();
+        }
+
+        // Toggle selection
+        function toggleSelection(transactionId) {
+            if (selectedIds.has(transactionId)) {
+                selectedIds.delete(transactionId);
+            } else {
+                selectedIds.add(transactionId);
+            }
+
+            updateBulkActions();
+            renderTransactions();
+            updateStats();
+        }
+
+        // Select all
+        function selectAll() {
+            filteredTransactions.forEach(tx => selectedIds.add(tx.transaction_id));
+            updateBulkActions();
+            renderTransactions();
+            updateStats();
+        }
+
+        // Select none
+        function selectNone() {
+            selectedIds.clear();
+            updateBulkActions();
+            renderTransactions();
+            updateStats();
+        }
+
+        // Clear selection
+        function clearSelection() {
+            selectedIds.clear();
+            updateBulkActions();
+            renderTransactions();
+            updateStats();
+        }
+
+        // Update bulk actions bar
+        function updateBulkActions() {
+            const bulkBar = document.getElementById('bulk-actions');
+            const bulkCount = document.getElementById('bulk-count');
+
+            if (selectedIds.size > 0) {
+                bulkBar.classList.add('show');
+                bulkCount.textContent = selectedIds.size;
+            } else {
+                bulkBar.classList.remove('show');
+            }
+        }
+
+        // Apply bulk changes
+        function applyBulkChanges() {
+            const bulkProperty = document.getElementById('bulk-property').value;
+            const bulkCategory = document.getElementById('bulk-category').value;
+
+            if (!bulkProperty && !bulkCategory) {
+                showToast('⚠ Please select a property or category to apply', 'warning');
+                return;
+            }
+
+            const count = selectedIds.size;
+            selectedIds.forEach(id => {
+                const existing = pendingChanges.get(id) || { transaction_id: id };
+
+                if (bulkProperty) {
+                    existing.property_name = bulkProperty;
+                }
+                if (bulkCategory && currentTab === 'expenses') {
+                    existing.category = bulkCategory;
+                }
+
+                pendingChanges.set(id, existing);
+            });
+
+            // Clear selection and reset bulk selects
+            selectedIds.clear();
+            document.getElementById('bulk-property').value = '';
+            document.getElementById('bulk-category').value = '';
+
+            updateBulkActions();
+            renderTransactions();
+            updateStats();
+
+            showToast(`✓ Applied changes to ${count} transactions`, 'success');
+        }
+
+        // Validation function
+        function validateChanges(updates) {
+            const errors = [];
+
+            for (const update of updates) {
+                const tx = allTransactions.find(t => t.transaction_id === update.transaction_id);
+                const txDesc = tx ? tx.description.substring(0, 40) : update.transaction_id;
+
+                if (currentTab === 'income') {
+                    // Income requires property_name
+                    if (!update.property_name || update.property_name.trim() === '') {
+                        errors.push({
+                            transaction_id: update.transaction_id,
+                            field: 'property_name',
+                            message: `Income "${txDesc}" missing property`
+                        });
+                    }
+                } else if (currentTab === 'expenses') {
+                    // Expenses require category (property is optional)
+                    if (!update.category || update.category.trim() === '') {
+                        errors.push({
+                            transaction_id: update.transaction_id,
+                            field: 'category',
+                            message: `Expense "${txDesc}" missing category`
+                        });
+                    }
+                }
+            }
+
+            return errors;
+        }
+
+        // Save changes
+        async function saveChanges() {
+            if (pendingChanges.size === 0) {
+                showToast('No changes to save', 'warning');
+                return;
+            }
+
+            const updates = Array.from(pendingChanges.values());
+
+            // VALIDATION: Check all updates have required fields
+            const validationErrors = validateChanges(updates);
+            if (validationErrors.length > 0) {
+                const errorMessages = validationErrors.slice(0, 3).map(err => err.message).join('<br>');
+                const remaining = validationErrors.length > 3 ? `<br>...and ${validationErrors.length - 3} more` : '';
+
+                showToast(
+                    `Validation failed:<br>${errorMessages}${remaining}`,
+                    'error',
+                    8000
+                );
+
+                console.error('Validation errors:', validationErrors);
+
+                // Highlight invalid transactions
+                validationErrors.forEach(err => {
+                    const card = document.querySelector(`[data-id="${err.transaction_id}"]`);
+                    if (card) {
+                        card.style.border = '3px solid var(--danger)';
+                        setTimeout(() => { card.style.border = ''; }, 5000);
+                    }
+                });
+
+                return;
+            }
+
+            // Log payload for debugging
+            console.log(`Saving ${updates.length} changes:`, updates);
+
+            showProgress(updates.length, 'Saving Changes...');
+
+            try {
+                const BATCH_SIZE = 10;
+                let savedCount = 0;
+
+                for (let i = 0; i < updates.length; i += BATCH_SIZE) {
+                    const batch = updates.slice(i, Math.min(i + BATCH_SIZE, updates.length));
+
+                    const endpoint = currentTab === 'income' ? '/review/bulk/income' : '/review/bulk/expenses';
+                    const response = await fetch(`${API_BASE}${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ updates: batch })
+                    });
+
+                    if (!response.ok) {
+                        let errorDetail = `HTTP ${response.status}: Failed to save batch`;
+                        try {
+                            const errorData = await response.json();
+                            errorDetail = errorData.detail || errorData.message || errorDetail;
+                        } catch (e) {
+                            try {
+                                errorDetail = await response.text();
+                            } catch (e2) {
+                                // Use default error message
+                            }
+                        }
+
+                        console.error(`Batch save failed for ${batch.length} transactions:`, {
+                            status: response.status,
+                            statusText: response.statusText,
+                            error: errorDetail,
+                            batch: batch
+                        });
+
+                        throw new Error(errorDetail);
+                    }
+
+                    savedCount += batch.length;
+                    updateProgress(savedCount);
+
+                    // Mark transactions as saved
+                    batch.forEach(update => {
+                        savedTransactions.add(update.transaction_id);
+                    });
+                }
+
+                hideProgress();
+                showToast(`✓ Successfully saved ${savedCount} changes!`, 'success');
+
+                // Optimistic UI update: Apply changes to local state without full reload
+                applyOptimisticUpdates(updates);
+                pendingChanges.clear();
+                updateInstructionsProgress();
+
+            } catch (error) {
+                hideProgress();
+
+                const errorMessage = error.message || 'Unknown error occurred';
+                showToast(
+                    `✕ Save failed: ${errorMessage}<br><small>Check browser console for details</small>`,
+                    'error',
+                    10000  // Show for 10 seconds
+                );
+
+                // Log full error context
+                console.error('Save operation failed:', {
+                    error: error,
+                    pendingChanges: Array.from(pendingChanges.values()),
+                    currentTab: currentTab
+                });
+            }
+        }
+
+        // Save and reprocess
+        async function saveAndReprocess() {
+            if (pendingChanges.size === 0) {
+                showAlert('No changes to save', 'error');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // Save changes
+                await saveChanges();
+
+                // Reprocess - get latest transaction file from API
+                showAlert('⏳ Re-processing transactions...', 'info');
+
+                const fileResponse = await fetch(`${API_BASE}/files/latest-transaction`);
+                if (!fileResponse.ok) {
+                    throw new Error('Could not find a valid transaction file. Please upload a file from the dashboard.');
+                }
+                const fileData = await fileResponse.json();
+
+                const processResponse = await fetch(`${API_BASE}/process/bank`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bank_file_path: fileData.file_path, year: 2025 })
+                });
+
+                if (processResponse.ok) {
+                    const result = await processResponse.json();
+                    showAlert(
+                        `✅ Successfully re-processed! Income: ${result.income_count}, Expenses: ${result.expense_count}`,
+                        'success'
+                    );
+                } else {
+                    throw new Error('Failed to reprocess transactions');
+                }
+
+                setTimeout(() => loadData(), 2000);
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            const total = filteredTransactions.length;
+            const amount = filteredTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-amount').textContent = `$${amount.toFixed(2)}`;
+            document.getElementById('stat-selected').textContent = selectedIds.size;
+            document.getElementById('stat-changes').textContent = pendingChanges.size;
+        }
+
+        // Setup keyboard shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Focus search with "/"
+                if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    document.getElementById('search-input').focus();
+                }
+
+                // Select all with Ctrl+A
+                if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    selectAll();
+                }
+
+                // Save with Ctrl+S
+                if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    saveChanges();
+                }
+            });
+        }
+
+        // Utility functions
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function formatCategory(cat) {
+            return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function showLoading() {
+            document.getElementById('loading-spinner').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-spinner').classList.remove('show');
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.innerHTML = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 5000);
+        }
+    </script>
+</body>
+</html>

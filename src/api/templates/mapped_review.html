@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Review Mapped Transactions - Lust Rentals</title>
+    <style>
+        /* Base & Typography */
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            margin: 2rem;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+        h1 {
+            color: #0f172a;
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        h2 {
+            color: #2563eb;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Enhanced Sections */
+        .section {
+            background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Header controls */
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            background: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 0.875rem;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        tbody tr:hover {
+            background-color: #f0f9ff;
+            transform: scale(1.002);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Buttons */
+        button, .button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            text-decoration: none;
+            display: inline-block;
+        }
+        button:hover:not(:disabled), .button:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        button:active:not(:disabled), .button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        button.secondary, .button.secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        }
+        button.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        /* Form Controls */
+        select, input[type="text"] {
+            padding: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            background: white;
+            color: #1e293b;
+            min-width: 150px;
+        }
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Status badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge.entity {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        .badge.property {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+        }
+
+        /* Scrollable tables */
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            border-radius: 0.75rem;
+            position: relative;
+        }
+
+        /* Success/error messages */
+        .message {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .message.show {
+            display: block;
+        }
+
+        /* File upload area */
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+        .upload-area.drag-over {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 2px solid #e5e7eb;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-controls">
+        <div>
+            <h1>Review Mapped Transactions</h1>
+            <p style="color: #64748b; margin-top: 0.5rem;">View and edit all mapped income and expense transactions</p>
+        </div>
+        <div class="button-group">
+            <a href="/review" class="button secondary">← Back to Review Dashboard</a>
+            <button onclick="exportToExcel()" class="button">📊 Export to Excel</button>
+            <button onclick="document.getElementById('fileInput').click()" class="button success">📥 Import from Excel</button>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;" onchange="handleFileUpload(event)">
+
+    <div id="messageBox" class="message"></div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-label">Total Income Transactions</div>
+            <div class="stat-value">{{ total_income }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Expense Transactions</div>
+            <div class="stat-value">{{ total_expenses }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Viewing Year</div>
+            <div class="stat-value">{{ year }}</div>
+        </div>
+    </div>
+
+    <!-- Income Section -->
+    <div class="section">
+        <h2>💰 Income Transactions (Mapped Deposits)</h2>
+        <p style="color: #64748b; margin-bottom: 1rem;">All income transactions that have been mapped to properties. Click on a property to edit.</p>
+
+        {% if income %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Memo</th>
+                        <th>Amount</th>
+                        <th>Property</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in income %}
+                    <tr data-id="{{ transaction.transaction_id }}">
+                        <td>{{ transaction.date }}</td>
+                        <td>{{ transaction.memo }}</td>
+                        <td style="font-weight: 600; color: #059669;">${{ "%.2f"|format(transaction.amount) }}</td>
+                        <td>
+                            <span class="badge {% if transaction.property_name == 'Lust Rentals LLC' %}entity{% else %}property{% endif %}">
+                                {{ transaction.property_name }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.mapping_notes or '' }}</td>
+                        <td>
+                            <button onclick="editIncome('{{ transaction.transaction_id }}', '{{ transaction.property_name }}', '{{ transaction.mapping_notes or '' }}')">Edit</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: #64748b; font-style: italic;">No mapped income transactions found.</p>
+        {% endif %}
+    </div>
+
+    <!-- Expenses Section -->
+    <div class="section">
+        <h2>💳 Expense Transactions (Categorized)</h2>
+        <p style="color: #64748b; margin-bottom: 1rem;">All expense transactions that have been categorized. Click to edit category or property assignment.</p>
+
+        {% if expenses %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Memo</th>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Property</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in expenses %}
+                    <tr data-id="{{ transaction.transaction_id }}">
+                        <td>{{ transaction.date }}</td>
+                        <td>{{ transaction.memo }}</td>
+                        <td style="font-weight: 600; color: #dc2626;">${{ "%.2f"|format(transaction.amount) }}</td>
+                        <td>{{ transaction.category }}</td>
+                        <td>
+                            {% if transaction.property_name %}
+                            <span class="badge {% if transaction.property_name == 'Lust Rentals LLC' %}entity{% else %}property{% endif %}">
+                                {{ transaction.property_name }}
+                            </span>
+                            {% else %}
+                            <span style="color: #94a3b8;">Not assigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button onclick="editExpense('{{ transaction.transaction_id }}', '{{ transaction.category }}', '{{ transaction.property_name or '' }}')">Edit</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: #64748b; font-style: italic;">No categorized expense transactions found.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        const propertyOptions = {{ property_options | tojson }};
+        const expenseOptions = {{ expense_options | tojson }};
+
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.className = `message ${type} show`;
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 5000);
+        }
+
+        function editIncome(transactionId, currentProperty, currentNotes) {
+            const newProperty = prompt(`Select property for this income transaction:\n\nCurrent: ${currentProperty}\n\nAvailable properties:\n${propertyOptions.join('\n')}\n\nEnter property name:`, currentProperty);
+
+            if (newProperty && newProperty !== currentProperty) {
+                const notes = prompt('Optional notes:', currentNotes);
+
+                fetch(`/review/income/${transactionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        property_name: newProperty,
+                        mapping_notes: notes
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showMessage('Income transaction updated successfully!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showMessage('Error updating transaction: ' + error, 'error');
+                });
+            }
+        }
+
+        function editExpense(transactionId, currentCategory, currentProperty) {
+            const newCategory = prompt(`Select category for this expense:\n\nCurrent: ${currentCategory}\n\nAvailable categories:\n${expenseOptions.slice(0, 20).join('\n')}\n...\n\nEnter category:`, currentCategory);
+
+            if (newCategory && newCategory !== currentCategory) {
+                const newProperty = prompt(`Assign to property (optional):\n\nCurrent: ${currentProperty || 'None'}\n\nAvailable properties:\n${propertyOptions.join('\n')}\n\nEnter property name (or leave blank):`, currentProperty);
+
+                fetch(`/review/expenses/${transactionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        category: newCategory,
+                        property_name: newProperty || null
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showMessage('Expense transaction updated successfully!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showMessage('Error updating transaction: ' + error, 'error');
+                });
+            }
+        }
+
+        function exportToExcel() {
+            window.location.href = '/review/mapped/export-excel?year={{ year if year != "All Years" else "" }}';
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showMessage('Uploading and processing file...', 'success');
+
+            fetch('/review/mapped/import-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error_count > 0) {
+                    showMessage(`Import completed with ${data.error_count} errors. ${data.message}`, 'error');
+                } else {
+                    showMessage(data.message, 'success');
+                }
+                setTimeout(() => location.reload(), 2000);
+            })
+            .catch(error => {
+                showMessage('Error importing file: ' + error, 'error');
+            });
+        }
+    </script>
+</body>
+</html>

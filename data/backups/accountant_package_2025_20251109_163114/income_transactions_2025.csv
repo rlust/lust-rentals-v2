@@ -1,0 +1,38 @@
+account_number,account_name,date,credit_amount,debit_amount,code,description,reference,memo,transaction_type,amount,transaction_id,property_name,mapping_notes,mapping_status,created_at,updated_at,modified_by
+1050106268148,LUST RENTALS,2025-01-02 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250102_00090_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-01-03 00:00:00,995.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,995.0,20250103_00089_income,,,mapping_missing,,,
+1050106268148,LUST RENTALS,2025-01-23 00:00:00,100.0,0.0,DDA9,Deposit,,Deposit,income,100.0,20250123_00086_income,118 W Shields St,,overridden,,,system
+1050106268148,LUST RENTALS,2025-02-03 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250203_00085_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-02-04 00:00:00,995.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,995.0,20250204_00084_income,,,mapping_missing,,,
+1050106268148,LUST RENTALS,2025-03-03 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250303_00078_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-03-04 00:00:00,985.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20250304_00077_income,118 W Shields St,housing authority – change if needed,mapped,,,
+1050106268148,LUST RENTALS,2025-03-06 00:00:00,200.0,0.0,DDA9,Deposit,,Deposit,income,200.0,20250306_00074_income,118 W Shields St,,overridden,,,system
+1050106268148,LUST RENTALS,2025-03-14 00:00:00,160.0,0.0,DDA9,Deposit,,Deposit,income,160.0,20250314_00073_income,UNASSIGNED,small/renter – set manually,manual_review,,,
+1050106268148,LUST RENTALS,2025-04-02 00:00:00,985.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20250402_00070_income,118 W Shields St,housing authority – change if needed,mapped,,,
+1050106268148,LUST RENTALS,2025-04-02 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250402_00071_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-04-10 00:00:00,120.0,0.0,DDA9,Deposit,,Deposit,income,120.0,20250410_00067_income,UNASSIGNED,small/renter – set manually,manual_review,,,
+1050106268148,LUST RENTALS,2025-04-18 00:00:00,100.0,0.0,DDA9,Deposit,,Deposit,income,100.0,20250418_00065_income,118 W Shields St,,overridden,,2025-11-09 14:44:46,system
+1050106268148,LUST RENTALS,2025-05-01 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250501_00063_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-05-02 00:00:00,985.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20250502_00062_income,118 W Shields St,housing authority – change if needed,mapped,,,
+1050106268148,LUST RENTALS,2025-05-22 00:00:00,215.0,0.0,DDA9,Deposit,,Deposit,income,215.0,20250522_00056_income,UNASSIGNED,small/renter – set manually,manual_review,,,
+1050106268148,LUST RENTALS,2025-06-03 00:00:00,985.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20250603_00053_income,118 W Shields St,housing authority – change if needed,mapped,,,
+1050106268148,LUST RENTALS,2025-06-03 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250603_00054_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-06-30 00:00:00,2600.0,0.0,DDA9,Deposit,,Deposit,income,2600.0,20250630_00045_income,UNASSIGNED,maybe 2 rents or catch-up – split manually,manual_review,,,
+1050106268148,LUST RENTALS,2025-06-30 00:00:00,160.0,0.0,DDA9,Deposit,,Deposit,income,160.0,20250630_00046_income,UNASSIGNED,small/renter – set manually,manual_review,,,
+1050106268148,LUST RENTALS,2025-07-02 00:00:00,985.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20250702_00044_income,118 W Shields St,housing authority – change if needed,mapped,,,
+1050106268148,LUST RENTALS,2025-07-03 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250703_00043_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-07-10 00:00:00,200.0,0.0,DDA9,Deposit,,Deposit,income,200.0,20250710_00041_income,118 W Shields St,,overridden,,2025-11-09 14:34:42,system
+1050106268148,LUST RENTALS,2025-08-04 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250804_00033_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-08-05 00:00:00,985.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20250805_00031_income,118 W Shields St,housing authority – change if needed,mapped,,,
+1050106268148,LUST RENTALS,2025-09-02 00:00:00,1300.0,0.0,DDA101,Deposit,,Deposit,income,1300.0,20250902_00022_income,966 Kinsbury Court,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-09-03 00:00:00,985.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20250903_00020_income,118 W Shields St,housing authority – change if needed,mapped,,,
+1050106268148,LUST RENTALS,2025-09-03 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20250903_00021_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-09-11 00:00:00,200.0,0.0,DDA9,Deposit,,Deposit,income,200.0,20250911_00018_income,118 W Shields St,,overridden,,2025-11-09 14:35:23,system
+1050106268148,LUST RENTALS,2025-09-26 00:00:00,10.17,0.0,DDA11,ATM Deposit,,XX6633 RETURN 09/26 12:50 THE HOME DEPOT # NEWARK OH 06222710 526979000210,income,10.17,20250926_00014_income,,,mapping_missing,,,
+1050106268148,LUST RENTALS,2025-09-29 00:00:00,1300.0,0.0,DDA101,Deposit,,Deposit,income,1300.0,20250929_00011_income,966 Kinsbury Court,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-10-02 00:00:00,985.0,0.0,DDA10,ACH Deposit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20251002_00010_income,118 W Shields St,housing authority – change if needed,mapped,,,
+1050106268148,LUST RENTALS,2025-10-06 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20251006_00008_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-10-21 00:00:00,9.63,0.0,DDA11,ATM Deposit,,XX6633 RETURN 10/21 14:26 AMAZON.COM SEATTLE WA 00000101 599BT6LODUEZ,income,9.63,20251021_00004_income,118 W Shields St,Test override,overridden,,,system
+1050106268148,LUST RENTALS,2025-11-03 00:00:00,1100.0,0.0,DDA9,Deposit,,Deposit,income,1100.0,20251103_00003_income,41 26th St,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-11-03 00:00:00,1300.0,0.0,DDA101,Deposit,,Deposit,income,1300.0,20251103_00002_income,966 Kinsbury Court,tenant/rent – set to real property if different,mapped,,,
+1050106268148,LUST RENTALS,2025-11-04 00:00:00,985.0,0.0,DDA408,Memo Credit,,LICKING METROPOL HAPPMT 180052X,income,985.0,20251104_00000_income,118 W Shields St,housing authority – change if needed,mapped,,,

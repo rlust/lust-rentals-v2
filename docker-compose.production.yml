@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lust-rentals-tax-reporting:latest
+    container_name: lust-rentals-app
+    restart: unless-stopped
+
+    # Environment configuration
+    env_file:
+      - .env.production
+    environment:
+      - LUST_DATA_DIR=/app/data
+      - LUST_LOG_LEVEL=${LUST_LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+
+    # Persistent storage
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+
+    # Internal port only (not exposed directly)
+    expose:
+      - "8000"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: lust-rentals-nginx
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+
+    depends_on:
+      app:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - app-network
+
+  backup:
+    image: lust-rentals-tax-reporting:latest
+    container_name: lust-rentals-backup
+    restart: unless-stopped
+
+    env_file:
+      - .env.production
+    environment:
+      - BACKUP_ENABLED=true
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-90}
+
+    volumes:
+      - ./data:/app/data:ro
+      - ./backups:/app/backups
+      - ./scripts/backup.sh:/app/backup.sh:ro
+
+    # Run backup script on schedule (daily at 2 AM)
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Installing crond..."
+        apk add --no-cache dcron
+        echo "0 2 * * * /bin/sh /app/backup.sh >> /app/backups/backup.log 2>&1" > /etc/crontabs/root
+        echo "Backup service started. Running daily at 2 AM UTC."
+        crond -f -l 2
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  data:
+    driver: local
+  backups:
+    driver: local

@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lust Rentals Tax Reporting - V2 Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #f1f5f9;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: var(--dark);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .header .version {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card .label {
+            color: var(--gray);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            color: var(--dark);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .icon {
+            font-size: 2.5rem;
+            opacity: 0.2;
+            float: right;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            color: var(--dark);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h2::before {
+            content: '';
+            width: 4px;
+            height: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 2px;
+        }
+
+        /* Upload Section */
+        .upload-zone {
+            border: 2px dashed var(--primary);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            background: var(--light-gray);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-zone:hover {
+            background: #e0e7ff;
+            border-color: var(--primary-dark);
+        }
+
+        .upload-zone.dragover {
+            background: #dbeafe;
+            border-color: var(--primary-dark);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        /* Form Elements */
+        input[type="file"] {
+            display: none;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            margin-bottom: 1rem;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--secondary), #059669);
+            color: var(--white);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            color: var(--white);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger);
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid var(--primary);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Progress Bar */
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .progress.show {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        /* Report List */
+        .report-list {
+            list-style: none;
+        }
+
+        .report-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .report-item:last-child {
+            border-bottom: none;
+        }
+
+        .report-item:hover {
+            background: var(--light-gray);
+            border-radius: 0.5rem;
+        }
+
+        .report-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .report-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid var(--light-gray);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+            display: none;
+        }
+
+        .spinner.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* File info */
+        .file-info {
+            background: var(--light-gray);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .file-size {
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Global Navigation -->
+        <nav class="global-nav" id="globalNav">
+            <div class="nav-header">
+                <a href="/dashboard-v2" class="nav-brand">
+                    <span class="nav-brand-icon">&#127969;</span>
+                    <span>
+                        <span class="nav-brand-text">Lust Rentals</span>
+                        <span class="nav-brand-sub">Tax Reporting</span>
+                    </span>
+                </a>
+                <button class="nav-toggle" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Toggle navigation">
+                    &#9776;
+                </button>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-group">
+                    <span class="nav-group-label">Main</span>
+                    <a href="/dashboard-v2" class="nav-link active">
+                        <span class="nav-link-icon">&#128200;</span>
+                        Dashboard
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Review</span>
+                    <a href="/review-enhanced" class="nav-link">
+                        <span class="nav-link-icon">&#10024;</span>
+                        Review Transactions
+                    </a>
+                    <a href="/review" class="nav-link">
+                        <span class="nav-link-icon">&#128269;</span>
+                        Classic Review
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Manage</span>
+                    <a href="/transactions" class="nav-link">
+                        <span class="nav-link-icon">&#128188;</span>
+                        Transactions
+                    </a>
+                    <a href="/properties-ui" class="nav-link">
+                        <span class="nav-link-icon">&#127970;</span>
+                        Properties
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Tools</span>
+                    <a href="/docs" class="nav-link" target="_blank">
+                        <span class="nav-link-icon">&#128218;</span>
+                        API Docs
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Quick Actions - Prominent at Top -->
+        <div class="quick-actions-grid">
+            <a href="/review-enhanced" class="quick-action-card warning">
+                <span class="quick-action-icon">&#10024;</span>
+                <span class="quick-action-title">Review Transactions</span>
+                <span class="quick-action-desc">Categorize and assign properties</span>
+            </a>
+            <a href="/transactions" class="quick-action-card primary">
+                <span class="quick-action-icon">&#128188;</span>
+                <span class="quick-action-title">Manage Transactions</span>
+                <span class="quick-action-desc">View and edit all transactions</span>
+            </a>
+            <a href="/properties-ui" class="quick-action-card success">
+                <span class="quick-action-icon">&#127970;</span>
+                <span class="quick-action-title">Manage Properties</span>
+                <span class="quick-action-desc">Add or edit rental properties</span>
+            </a>
+            <div class="quick-action-card" onclick="generateReport('annual')">
+                <span class="quick-action-icon">&#128196;</span>
+                <span class="quick-action-title">Annual Report</span>
+                <span class="quick-action-desc">Generate tax summary</span>
+            </div>
+        </div>
+
+        <!-- Year Selector and Stats Row -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+            <div style="background: var(--white); padding: 1rem 1.5rem; border-radius: 1rem; box-shadow: var(--shadow); flex: 0 0 auto;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--dark); font-weight: 600; font-size: 0.875rem;">
+                    &#128197; Tax Year
+                </label>
+                <select id="dashboard-year-selector" style="padding: 0.625rem 1rem; border: 2px solid var(--primary); border-radius: 0.5rem; font-size: 1rem; font-weight: 600; color: var(--dark); cursor: pointer; min-width: 120px;">
+                    <option value="2020">2020</option>
+                    <option value="2021">2021</option>
+                    <option value="2022">2022</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
+                </select>
+            </div>
+
+            <!-- Inline Stats -->
+            <div class="stat-card" style="flex: 1; min-width: 150px;">
+                <div class="label">Database</div>
+                <div class="value" id="db-status" style="font-size: 1.25rem;">...</div>
+            </div>
+            <div class="stat-card" style="flex: 1; min-width: 180px;">
+                <div class="label">Income (<span id="stat-year">2025</span>)</div>
+                <div class="value" id="total-income" style="font-size: 1.25rem; color: var(--secondary);">$0</div>
+            </div>
+            <div class="stat-card" style="flex: 1; min-width: 180px;">
+                <div class="label">Expenses (<span id="stat-year-2">2025</span>)</div>
+                <div class="value" id="total-expenses" style="font-size: 1.25rem; color: var(--danger);">$0</div>
+            </div>
+            <div class="stat-card" style="flex: 1; min-width: 180px;">
+                <div class="label">Net (<span id="stat-year-3">2025</span>)</div>
+                <div class="value" id="net-income" style="font-size: 1.25rem;">$0</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Upload & Process Section -->
+            <div class="card">
+                <h2>📤 Upload & Process</h2>
+
+                <div id="upload-alert" class="alert"></div>
+
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+                    <div class="upload-icon">☁️</div>
+                    <p style="color: var(--dark); font-weight: 600; margin-bottom: 0.5rem;">Click to upload or drag and drop</p>
+                    <p style="color: var(--gray); font-size: 0.875rem;">CSV files from your bank (Max 50MB)</p>
+                </div>
+
+                <input type="file" id="file-input" accept=".csv" />
+
+                <div id="file-info" class="file-info">
+                    <div class="file-name" id="file-name"></div>
+                    <div class="file-size" id="file-size"></div>
+                </div>
+
+                <div class="progress" id="upload-progress">
+                    <div class="progress-bar" id="upload-progress-bar" style="width: 0%"></div>
+                </div>
+
+                <label style="display: block; margin-top: 1rem; color: var(--gray); font-weight: 500;">Tax Year</label>
+                <input type="number" id="process-year" value="2025" min="2020" max="2030" />
+
+                <button class="btn btn-primary" id="process-btn" disabled>
+                    <span>🚀</span> Upload & Process
+                </button>
+
+                <div style="border-top: 2px solid var(--light-gray); margin: 1.5rem 0; padding-top: 1.5rem;">
+                    <p style="color: var(--gray); font-size: 0.875rem; margin-bottom: 1rem;">
+                        💡 <strong>Already uploaded?</strong> Re-process existing data to apply your review changes.
+                    </p>
+                    <button class="btn btn-success" onclick="reprocessExistingData()" style="width: 100%;">
+                        🔄 Re-Process Existing Transactions
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div class="card">
+                <h2>📊 Generate Reports</h2>
+
+                <div id="report-alert" class="alert"></div>
+
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--gray); font-weight: 500;">Report Year</label>
+                <input type="number" id="report-year" value="2025" min="2020" max="2030" />
+
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="generateReport('annual')">
+                        📄 Annual Summary
+                    </button>
+                    <button class="btn btn-success" onclick="generateReport('schedule-e')">
+                        📋 Schedule E
+                    </button>
+                    <button class="btn btn-success" onclick="generateReport('property-pdf')">
+                        🏠 Property PDF
+                    </button>
+                    <button class="btn btn-success" onclick="generateReport('property-excel')">
+                        📊 Property Excel
+                    </button>
+                </div>
+
+                <div class="spinner" id="report-spinner"></div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="card">
+                <h2>💾 Export Data</h2>
+
+                <div id="export-alert" class="alert"></div>
+
+                <ul class="report-list">
+                    <li class="report-item">
+                        <span>Income Transactions (CSV)</span>
+                        <button class="report-btn" onclick="exportData('income')">Download</button>
+                    </li>
+                    <li class="report-item">
+                        <span>Expense Transactions (CSV)</span>
+                        <button class="report-btn" onclick="exportData('expenses')">Download</button>
+                    </li>
+                    <li class="report-item">
+                        <span>Comprehensive Excel Report</span>
+                        <button class="report-btn" onclick="exportData('excel')">Download</button>
+                    </li>
+                    <li class="report-item">
+                        <span>Property Report (PDF)</span>
+                        <button class="report-btn" onclick="generateReport('property-pdf')">Download</button>
+                    </li>
+                    <li class="report-item">
+                        <span>Property Report (Excel)</span>
+                        <button class="report-btn" onclick="generateReport('property-excel')">Download</button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Backup & Export Section -->
+            <div class="card">
+                <h2>💼 Backup & Export</h2>
+
+                <div id="backup-alert" class="alert"></div>
+
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--gray); font-weight: 500;">Export Year</label>
+                <input type="number" id="backup-year" value="2025" min="2020" max="2030" style="margin-bottom: 1rem;" />
+
+                <ul class="report-list">
+                    <li class="report-item">
+                        <span>📦 Full Data Backup (ZIP)</span>
+                        <button class="report-btn" onclick="createBackup(true)">Create</button>
+                    </li>
+                    <li class="report-item">
+                        <span>🗄️ Database Only Backup</span>
+                        <button class="report-btn" onclick="createDatabaseBackup()">Create</button>
+                    </li>
+                    <li class="report-item">
+                        <span>👔 Accountant Package (Year-specific)</span>
+                        <button class="report-btn" onclick="createAccountantPackage()">Create</button>
+                    </li>
+                    <li class="report-item">
+                        <span>📋 Export Database Tables (CSV)</span>
+                        <button class="report-btn" onclick="exportDatabaseTables()">Export</button>
+                    </li>
+                </ul>
+
+                <div style="margin-top: 1rem; padding: 0.75rem; background: var(--light-gray); border-radius: 0.5rem;">
+                    <small style="color: var(--gray);">
+                        💡 <strong>Tip:</strong> Backups are saved to <code>data/backups/</code>
+                    </small>
+                </div>
+            </div>
+
+            <!-- System Tools (moved from Quick Actions, simplified) -->
+            <div class="card">
+                <h2>&#128295; System Tools</h2>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="checkHealth()">
+                        &#127973; Health Check
+                    </button>
+                    <button class="btn btn-primary" onclick="viewDatabaseStatus()">
+                        &#128451; Database Status
+                    </button>
+                    <button class="btn btn-primary" onclick="viewQualityMetrics()">
+                        &#128202; Quality Metrics
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared utilities -->
+    <script src="/static/js/api-client.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/date-utils.js"></script>
+    <script src="/static/js/navigation.js"></script>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Load stats on page load
+        window.addEventListener('load', () => {
+            loadDatabaseStatus();
+            loadQualityMetrics();
+
+            // Setup year selector change handler
+            const yearSelector = document.getElementById('dashboard-year-selector');
+            yearSelector.addEventListener('change', () => {
+                loadQualityMetrics();
+            });
+        });
+
+        // File upload handling
+        const fileInput = document.getElementById('file-input');
+        const uploadZone = document.getElementById('upload-zone');
+        const processBtn = document.getElementById('process-btn');
+        const fileInfo = document.getElementById('file-info');
+
+        // Drag and drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('file-size').textContent = formatFileSize(file.size);
+                fileInfo.classList.add('show');
+                processBtn.disabled = false;
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Upload and process
+        processBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            const year = document.getElementById('process-year').value;
+
+            if (!file) {
+                showAlert('upload-alert', 'Please select a file first', 'error');
+                return;
+            }
+
+            processBtn.disabled = true;
+            document.getElementById('upload-progress').classList.add('show');
+            document.getElementById('upload-progress-bar').style.width = '30%';
+
+            try {
+                // Upload file
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const uploadResponse = await fetch(`${API_BASE}/upload/bank-file`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const uploadResult = await uploadResponse.json();
+                document.getElementById('upload-progress-bar').style.width = '60%';
+
+                // Process file
+                const processResponse = await fetch(`${API_BASE}/process/bank`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bank_file_path: uploadResult.saved_path,
+                        year: parseInt(year)
+                    })
+                });
+
+                if (!processResponse.ok) {
+                    throw new Error('Processing failed');
+                }
+
+                const processResult = await processResponse.json();
+                document.getElementById('upload-progress-bar').style.width = '100%';
+
+                showAlert('upload-alert', `✅ Successfully processed! Income: ${processResult.income_count}, Expenses: ${processResult.expense_count}`, 'success');
+
+                // Reload stats
+                setTimeout(() => {
+                    loadDatabaseStatus();
+                    loadQualityMetrics();
+                }, 1000);
+
+            } catch (error) {
+                showAlert('upload-alert', `❌ Error: ${error.message}`, 'error');
+            } finally {
+                processBtn.disabled = false;
+                setTimeout(() => {
+                    document.getElementById('upload-progress').classList.remove('show');
+                    document.getElementById('upload-progress-bar').style.width = '0%';
+                }, 2000);
+            }
+        });
+
+        // Generate reports
+        // Re-process existing transactions (applies saved overrides)
+        async function reprocessExistingData() {
+            const year = parseInt(document.getElementById('process-year').value);
+
+            // Show confirmation
+            if (!confirm(`Re-process transactions for year ${year}?\n\nThis will apply any saved review changes and update all reports.`)) {
+                return;
+            }
+
+            const progressBar = document.getElementById('upload-progress');
+            const progressBarInner = document.getElementById('upload-progress-bar');
+
+            progressBar.classList.add('show');
+            progressBarInner.style.width = '20%';
+
+            try {
+                // Get the most recent uploaded file path from the server
+                const dbStatusResponse = await fetch(`${API_BASE}/database/status`);
+                if (!dbStatusResponse.ok) {
+                    throw new Error('Could not get database status');
+                }
+
+                const dbStatus = await dbStatusResponse.json();
+                progressBarInner.style.width = '40%';
+
+                // Check if database has data
+                if (!dbStatus.ready_for_reports) {
+                    throw new Error('No processed data found. Please upload and process a file first.');
+                }
+
+                // Get latest transaction file from API (dynamically determined)
+                const fileResponse = await fetch(`${API_BASE}/files/latest-transaction`);
+                if (!fileResponse.ok) {
+                    throw new Error('Could not find a valid transaction file. Please upload a new file.');
+                }
+                const fileData = await fileResponse.json();
+
+                const processResponse = await fetch(`${API_BASE}/process/bank`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bank_file_path: fileData.file_path,
+                        year: year
+                    })
+                });
+
+                if (!processResponse.ok) {
+                    throw new Error('Failed to reprocess transactions');
+                }
+
+                const processResult = await processResponse.json();
+
+                progressBarInner.style.width = '100%';
+
+                showAlert('upload-alert',
+                    `✅ Successfully re-processed transactions!\n\n` +
+                    `📊 Results:\n` +
+                    `• Income: ${processResult.income_count} transactions\n` +
+                    `• Expenses: ${processResult.expense_count} transactions\n\n` +
+                    `Using file: ${fileData.filename}\n\n` +
+                    `Your review changes have been applied to all reports!`,
+                    'success'
+                );
+
+                // Reload stats
+                setTimeout(() => {
+                    loadDatabaseStatus();
+                    loadQualityMetrics();
+                }, 1000);
+
+                return; // Success!
+
+            } catch (error) {
+                showAlert('upload-alert', `❌ Error re-processing: ${error.message}`, 'error');
+            } finally {
+                setTimeout(() => {
+                    progressBar.classList.remove('show');
+                    progressBarInner.style.width = '0%';
+                }, 2000);
+            }
+        }
+
+        async function generateReport(type) {
+            const year = parseInt(document.getElementById('report-year').value);
+            document.getElementById('report-spinner').classList.add('show');
+
+            const endpoints = {
+                'annual': '/reports/annual',
+                'schedule-e': '/reports/schedule-e',
+                'property-pdf': '/reports/property/pdf',
+                'property-excel': '/reports/property/excel'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoints[type]}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ year, save_outputs: true })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Report generation failed');
+                }
+
+                // Get the result which contains the file_path
+                const result = await response.json();
+
+                // Download the generated file
+                if (result.file_path) {
+                    // Map report types to artifact keys for the download endpoint
+                    const artifactKeys = {
+                        'annual': 'summary_pdf',
+                        'schedule-e': 'schedule_csv',
+                        'property-pdf': 'property_report_pdf',
+                        'property-excel': 'property_report_excel'
+                    };
+
+                    const artifactKey = artifactKeys[type];
+                    const downloadUrl = `${API_BASE}/reports/download/${artifactKey}?year=${year}`;
+
+                    // Trigger download
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = result.file_path.split('/').pop();
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    showAlert('report-alert', `✅ ${type} report generated and downloaded successfully!`, 'success');
+                } else {
+                    showAlert('report-alert', `✅ ${type} report generated successfully!`, 'success');
+                }
+            } catch (error) {
+                showAlert('report-alert', `❌ Error: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('report-spinner').classList.remove('show');
+            }
+        }
+
+        // Export data
+        async function exportData(type) {
+            const endpoints = {
+                'income': '/export/income',
+                'expenses': '/export/expenses',
+                'excel': '/export/excel/report'
+            };
+
+            try {
+                window.open(`${API_BASE}${endpoints[type]}`, '_blank');
+                showAlert('export-alert', '✅ Download started!', 'success');
+            } catch (error) {
+                showAlert('export-alert', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Quick actions
+        async function checkHealth() {
+            const response = await fetch(`${API_BASE}/health`);
+            const result = await response.json();
+            alert(`Health Status: ${result.status === 'ok' ? '✅ OK' : '❌ Error'}`);
+        }
+
+        async function viewDatabaseStatus() {
+            window.open(`${API_BASE}/database/status`, '_blank');
+        }
+
+        async function viewQualityMetrics() {
+            window.open(`${API_BASE}/reports/quality`, '_blank');
+        }
+
+        // Load database status
+        async function loadDatabaseStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/database/status`);
+                const data = await response.json();
+                document.getElementById('db-status').textContent = data.exists ? '✅ Active' : '❌ Missing';
+            } catch (error) {
+                document.getElementById('db-status').textContent = '❌ Error';
+            }
+        }
+
+        // Load quality metrics
+        async function loadQualityMetrics() {
+            try {
+                // Get selected year from dropdown
+                const yearSelector = document.getElementById('dashboard-year-selector');
+                const selectedYear = parseInt(yearSelector.value) || 2025;
+
+                // Fetch quality metrics for the selected year
+                const qualityResponse = await fetch(`${API_BASE}/reports/quality?year=${selectedYear}`);
+                const qualityData = await qualityResponse.json();
+
+                if (qualityData.data_available && qualityData.income_metrics && qualityData.expense_metrics) {
+                    const totalIncome = qualityData.income_metrics.total_amount || 0;
+                    const totalExpenses = qualityData.expense_metrics.total_amount || 0;
+                    const netIncome = totalIncome - totalExpenses;
+
+                    // Update year labels
+                    document.getElementById('stat-year').textContent = selectedYear;
+                    document.getElementById('stat-year-2').textContent = selectedYear;
+                    document.getElementById('stat-year-3').textContent = selectedYear;
+
+                    // Update values
+                    document.getElementById('total-income').textContent =
+                        `$${totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    document.getElementById('total-expenses').textContent =
+                        `$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    document.getElementById('net-income').textContent =
+                        `$${netIncome.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+                    // Color code net income (green for positive, red for negative)
+                    const netIncomeElement = document.getElementById('net-income');
+                    if (netIncome >= 0) {
+                        netIncomeElement.style.color = 'var(--secondary)';
+                    } else {
+                        netIncomeElement.style.color = 'var(--danger)';
+                    }
+                } else {
+                    // No data available for selected year - show zeros
+                    document.getElementById('stat-year').textContent = selectedYear;
+                    document.getElementById('stat-year-2').textContent = selectedYear;
+                    document.getElementById('stat-year-3').textContent = selectedYear;
+                    document.getElementById('total-income').textContent = '$0.00';
+                    document.getElementById('total-expenses').textContent = '$0.00';
+                    document.getElementById('net-income').textContent = '$0.00';
+                    document.getElementById('net-income').style.color = 'var(--dark)';
+                }
+            } catch (error) {
+                console.error('Failed to load quality metrics:', error);
+                document.getElementById('total-income').textContent = 'Error';
+                document.getElementById('total-expenses').textContent = 'Error';
+                document.getElementById('net-income').textContent = 'Error';
+            }
+        }
+
+        // Show alerts
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        // Backup and export functions
+        async function createBackup(includeReports) {
+            try {
+                showAlert('backup-alert', '⏳ Creating full backup...', 'info');
+
+                const response = await fetch(`${API_BASE}/backup/create?include_reports=${includeReports}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Backup creation failed');
+                }
+
+                const result = await response.json();
+
+                showAlert('backup-alert',
+                    `✅ Backup created successfully!<br>` +
+                    `File: ${result.backup_name}<br>` +
+                    `Size: ${result.size_mb} MB<br>` +
+                    `Location: data/backups/`,
+                    'success'
+                );
+
+            } catch (error) {
+                showAlert('backup-alert', `❌ Error creating backup: ${error.message}`, 'error');
+            }
+        }
+
+        async function createDatabaseBackup() {
+            try {
+                showAlert('backup-alert', '⏳ Creating database backup...', 'info');
+
+                const response = await fetch(`${API_BASE}/backup/database`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Database backup failed');
+                }
+
+                const result = await response.json();
+
+                showAlert('backup-alert',
+                    `✅ Database backup created!<br>` +
+                    `File: ${result.backup_name}<br>` +
+                    `Size: ${result.size_mb} MB`,
+                    'success'
+                );
+
+            } catch (error) {
+                showAlert('backup-alert', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function createAccountantPackage() {
+            const year = parseInt(document.getElementById('backup-year').value);
+
+            try {
+                showAlert('backup-alert', `⏳ Creating accountant package for ${year}...`, 'info');
+
+                const response = await fetch(`${API_BASE}/backup/export/accountant?year=${year}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Package creation failed');
+                }
+
+                const result = await response.json();
+
+                // Automatically download the package
+                const downloadUrl = `${API_BASE}/backup/export/download/${result.package_file.split('/').pop()}`;
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = result.package_file.split('/').pop();
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showAlert('backup-alert',
+                    `✅ Accountant package created and downloaded!<br>` +
+                    `Year: ${year}<br>` +
+                    `Size: ${result.size_mb} MB<br>` +
+                    `Items: ${result.items_exported}`,
+                    'success'
+                );
+
+            } catch (error) {
+                showAlert('backup-alert', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function exportDatabaseTables() {
+            const year = parseInt(document.getElementById('backup-year').value);
+
+            try {
+                showAlert('backup-alert', `⏳ Exporting database tables for ${year}...`, 'info');
+
+                const response = await fetch(`${API_BASE}/backup/export/database?year=${year}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Database export failed');
+                }
+
+                const result = await response.json();
+
+                showAlert('backup-alert',
+                    `✅ Database tables exported!<br>` +
+                    `Year: ${year}<br>` +
+                    `Tables: ${result.tables_exported}<br>` +
+                    `Location: ${result.export_dir}`,
+                    'success'
+                );
+
+            } catch (error) {
+                showAlert('backup-alert', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

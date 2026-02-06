@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Manager - Lust Rentals</title>
+    <link rel="stylesheet" href="/static/css/components.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #f1f5f9;
+            --white: #ffffff;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: var(--white);
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--light-gray);
+            background: var(--white);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: var(--light-gray);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-success {
+            background: var(--secondary);
+            color: var(--white);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid var(--light-gray);
+            border-radius: 0.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--light-gray);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            white-space: nowrap;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        th.sortable:hover {
+            background: #e2e8f0;
+        }
+
+        th.sortable::after {
+            content: ' ↕';
+            opacity: 0.3;
+            font-size: 0.8rem;
+        }
+
+        th.sortable.sort-asc::after {
+            content: ' ▲';
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        th.sortable.sort-desc::after {
+            content: ' ▼';
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        td {
+            padding: 1rem;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: var(--dark);
+        }
+
+        .close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--primary);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            border-left-color: var(--secondary);
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--light-gray);
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--gray);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 1400px; margin: 0 auto; padding: 2rem;">
+        <!-- Global Navigation -->
+        <nav class="global-nav" id="globalNav">
+            <div class="nav-header">
+                <a href="/dashboard-v2" class="nav-brand">
+                    <span class="nav-brand-icon">&#127969;</span>
+                    <span>
+                        <span class="nav-brand-text">Lust Rentals</span>
+                        <span class="nav-brand-sub">Tax Reporting</span>
+                    </span>
+                </a>
+                <button class="nav-toggle" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Toggle navigation">
+                    &#9776;
+                </button>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-group">
+                    <span class="nav-group-label">Main</span>
+                    <a href="/dashboard-v2" class="nav-link">
+                        <span class="nav-link-icon">&#128200;</span>
+                        Dashboard
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Review</span>
+                    <a href="/review-enhanced" class="nav-link">
+                        <span class="nav-link-icon">&#10024;</span>
+                        Review Transactions
+                    </a>
+                    <a href="/review" class="nav-link">
+                        <span class="nav-link-icon">&#128269;</span>
+                        Classic Review
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Manage</span>
+                    <a href="/transactions" class="nav-link active">
+                        <span class="nav-link-icon">&#128188;</span>
+                        Transactions
+                    </a>
+                    <a href="/properties-ui" class="nav-link">
+                        <span class="nav-link-icon">&#127970;</span>
+                        Properties
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Tools</span>
+                    <a href="/docs" class="nav-link" target="_blank">
+                        <span class="nav-link-icon">&#128218;</span>
+                        API Docs
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>&#128188; Transaction Manager</h1>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('expenses')">💰 Expenses</div>
+            <div class="tab" onclick="switchTab('income')">💵 Income</div>
+        </div>
+
+        <div class="content">
+            <div class="stats" id="stats"></div>
+
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" id="search" placeholder="🔍 Search transactions..." onkeyup="filterTransactions()">
+                </div>
+                <button class="btn btn-primary" onclick="showAddModal()">
+                    ➕ Add Transaction
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table id="transactions-table">
+                    <thead id="table-header"></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Transaction</h2>
+                <button class="close" onclick="closeModal()">×</button>
+            </div>
+            <form id="transaction-form" onsubmit="saveTransaction(event)">
+                <input type="hidden" id="transaction_id">
+                <input type="hidden" id="edit_mode">
+
+                <div class="form-group">
+                    <label for="date">Date *</label>
+                    <input type="date" id="date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description *</label>
+                    <input type="text" id="description" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">Amount *</label>
+                    <input type="number" id="amount" step="0.01" required>
+                </div>
+
+                <div class="form-group" id="category-group">
+                    <label for="category">Category *</label>
+                    <select id="category"></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="property_name">Property</label>
+                    <select id="property_name">
+                        <option value="">-- No Property --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="memo">Memo</label>
+                    <textarea id="memo" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentTab = 'expenses';
+        let allTransactions = [];
+        let filteredTransactions = [];
+        let properties = [];
+        let categories = [];
+        let sortState = {
+            column: null,
+            direction: 'asc' // 'asc' or 'desc'
+        };
+
+        // Load on page load
+        window.addEventListener('load', async () => {
+            await loadProperties();
+            await loadCategories();
+            await loadTransactions();
+        });
+
+        async function loadProperties() {
+            const response = await fetch(`${API_BASE}/review/properties`);
+            properties = await response.json();
+            populatePropertyDropdown();
+        }
+
+        async function loadCategories() {
+            const response = await fetch(`${API_BASE}/review/categories`);
+            categories = await response.json();
+            populateCategoryDropdown();
+        }
+
+        function populatePropertyDropdown() {
+            const select = document.getElementById('property_name');
+            select.innerHTML = '<option value="">-- No Property --</option>';
+            properties.forEach(prop => {
+                const option = document.createElement('option');
+                option.value = prop;
+                option.textContent = prop;
+                select.appendChild(option);
+            });
+        }
+
+        function populateCategoryDropdown() {
+            const select = document.getElementById('category');
+            select.innerHTML = '<option value="">-- Select Category --</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                select.appendChild(option);
+            });
+        }
+
+        async function loadTransactions() {
+            const endpoint = currentTab === 'expenses' ? '/review/expenses/all' : '/review/income/all';
+            const response = await fetch(`${API_BASE}${endpoint}`);
+            const result = await response.json();
+            // Handle paginated response format (data property) or legacy array format
+            allTransactions = result.data || result;
+            filteredTransactions = [...allTransactions];
+            applySorting(); // Apply current sort state after loading data
+            renderTransactions();
+            updateStats();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            sortState = { column: null, direction: 'asc' }; // Reset sort when switching tabs
+            loadTransactions();
+        }
+
+        function sortByColumn(column) {
+            // Toggle direction if clicking the same column
+            if (sortState.column === column) {
+                if (sortState.direction === 'asc') {
+                    sortState.direction = 'desc';
+                } else if (sortState.direction === 'desc') {
+                    // Third click - reset to no sort
+                    sortState.column = null;
+                    sortState.direction = 'asc';
+                } else {
+                    sortState.direction = 'asc';
+                }
+            } else {
+                // New column - start with ascending
+                sortState.column = column;
+                sortState.direction = 'asc';
+            }
+
+            applySorting();
+            renderTransactions();
+        }
+
+        function applySorting() {
+            if (!sortState.column) {
+                // No sort applied - use original order
+                return;
+            }
+
+            filteredTransactions.sort((a, b) => {
+                let aVal, bVal;
+
+                switch (sortState.column) {
+                    case 'date':
+                        aVal = new Date(a.date);
+                        bVal = new Date(b.date);
+                        break;
+                    case 'description':
+                        aVal = (a.description || '').toLowerCase();
+                        bVal = (b.description || '').toLowerCase();
+                        break;
+                    case 'category':
+                        aVal = (a.category || '').toLowerCase();
+                        bVal = (b.category || '').toLowerCase();
+                        break;
+                    case 'property':
+                        aVal = (a.property_name || '').toLowerCase();
+                        bVal = (b.property_name || '').toLowerCase();
+                        break;
+                    case 'amount':
+                        aVal = a.amount;
+                        bVal = b.amount;
+                        break;
+                    default:
+                        return 0;
+                }
+
+                let comparison = 0;
+                if (aVal < bVal) {
+                    comparison = -1;
+                } else if (aVal > bVal) {
+                    comparison = 1;
+                }
+
+                return sortState.direction === 'asc' ? comparison : -comparison;
+            });
+        }
+
+        function renderTransactions() {
+            const thead = document.getElementById('table-header');
+            const tbody = document.getElementById('table-body');
+
+            if (currentTab === 'expenses') {
+                const getSortClass = (col) => {
+                    if (sortState.column === col) {
+                        return sortState.direction === 'asc' ? 'sort-asc' : 'sort-desc';
+                    }
+                    return '';
+                };
+
+                thead.innerHTML = `
+                    <tr>
+                        <th class="sortable ${getSortClass('date')}" onclick="sortByColumn('date')">Date</th>
+                        <th class="sortable ${getSortClass('description')}" onclick="sortByColumn('description')">Description</th>
+                        <th class="sortable ${getSortClass('category')}" onclick="sortByColumn('category')">Category</th>
+                        <th class="sortable ${getSortClass('property')}" onclick="sortByColumn('property')">Property</th>
+                        <th class="sortable ${getSortClass('amount')}" onclick="sortByColumn('amount')">Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                `;
+
+                tbody.innerHTML = filteredTransactions.map(tx => `
+                    <tr>
+                        <td>${new Date(tx.date).toLocaleDateString()}</td>
+                        <td>${tx.description || 'N/A'}</td>
+                        <td>
+                            ${tx.category ? `<span class="badge badge-success">${tx.category}</span>` : '<span class="badge badge-danger">Uncategorized</span>'}
+                        </td>
+                        <td>${tx.property_name || '<span class="badge badge-warning">None</span>'}</td>
+                        <td>$${tx.amount.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick='editTransaction(${JSON.stringify(tx).replace(/'/g, "&apos;")})'>✏️ Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTransaction('${tx.transaction_id}')">🗑️ Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                const getSortClass = (col) => {
+                    if (sortState.column === col) {
+                        return sortState.direction === 'asc' ? 'sort-asc' : 'sort-desc';
+                    }
+                    return '';
+                };
+
+                thead.innerHTML = `
+                    <tr>
+                        <th class="sortable ${getSortClass('date')}" onclick="sortByColumn('date')">Date</th>
+                        <th class="sortable ${getSortClass('description')}" onclick="sortByColumn('description')">Description</th>
+                        <th class="sortable ${getSortClass('property')}" onclick="sortByColumn('property')">Property</th>
+                        <th class="sortable ${getSortClass('amount')}" onclick="sortByColumn('amount')">Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                `;
+
+                tbody.innerHTML = filteredTransactions.map(tx => `
+                    <tr>
+                        <td>${new Date(tx.date).toLocaleDateString()}</td>
+                        <td>${tx.description || 'N/A'}</td>
+                        <td>
+                            ${tx.property_name ? `<span class="badge badge-success">${tx.property_name}</span>` : '<span class="badge badge-danger">Unassigned</span>'}
+                        </td>
+                        <td>$${tx.amount.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick='editTransaction(${JSON.stringify(tx).replace(/'/g, "&apos;")})'>✏️ Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTransaction('${tx.transaction_id}')">🗑️ Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            if (filteredTransactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <h3>No transactions found</h3>
+                            <p>Try adjusting your search or add a new transaction</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function filterTransactions() {
+            const search = document.getElementById('search').value.toLowerCase();
+            filteredTransactions = allTransactions.filter(tx => {
+                return tx.description?.toLowerCase().includes(search) ||
+                       tx.category?.toLowerCase().includes(search) ||
+                       tx.property_name?.toLowerCase().includes(search) ||
+                       tx.amount.toString().includes(search);
+            });
+            applySorting(); // Apply current sort after filtering
+            renderTransactions();
+        }
+
+        function updateStats() {
+            const total = allTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+            const count = allTransactions.length;
+
+            const assigned = currentTab === 'expenses'
+                ? allTransactions.filter(tx => tx.category).length
+                : allTransactions.filter(tx => tx.property_name).length;
+
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total ${currentTab}</div>
+                    <div class="stat-value">${count}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Amount</div>
+                    <div class="stat-value">$${total.toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">${currentTab === 'expenses' ? 'Categorized' : 'Assigned'}</div>
+                    <div class="stat-value">${assigned} / ${count}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Average</div>
+                    <div class="stat-value">$${count > 0 ? (total / count).toFixed(2) : '0.00'}</div>
+                </div>
+            `;
+        }
+
+        function showAddModal() {
+            document.getElementById('modal-title').textContent = `Add ${currentTab === 'expenses' ? 'Expense' : 'Income'}`;
+            document.getElementById('transaction-form').reset();
+            document.getElementById('transaction_id').value = '';
+            document.getElementById('edit_mode').value = 'false';
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+            // Show/hide category field based on tab
+            document.getElementById('category-group').style.display = currentTab === 'expenses' ? 'block' : 'none';
+
+            document.getElementById('edit-modal').classList.add('show');
+        }
+
+        function formatDateForInput(dateStr) {
+            // Parse the date and format it as YYYY-MM-DD for HTML date input
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                // If invalid date, return today's date
+                return new Date().toISOString().split('T')[0];
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function editTransaction(tx) {
+            document.getElementById('modal-title').textContent = `Edit ${currentTab === 'expenses' ? 'Expense' : 'Income'}`;
+            document.getElementById('transaction_id').value = tx.transaction_id;
+            document.getElementById('edit_mode').value = 'true';
+            document.getElementById('date').value = formatDateForInput(tx.date);
+            document.getElementById('description').value = tx.description || '';
+            document.getElementById('amount').value = tx.amount;
+            document.getElementById('category').value = tx.category || '';
+            document.getElementById('property_name').value = tx.property_name || '';
+            document.getElementById('memo').value = tx.memo || '';
+
+            document.getElementById('category-group').style.display = currentTab === 'expenses' ? 'block' : 'none';
+
+            document.getElementById('edit-modal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('edit-modal').classList.remove('show');
+        }
+
+        async function saveTransaction(event) {
+            event.preventDefault();
+
+            const isEdit = document.getElementById('edit_mode').value === 'true';
+            const transactionId = document.getElementById('transaction_id').value;
+
+            const data = {
+                transaction_id: isEdit ? transactionId : `manual_${Date.now()}`,
+                date: document.getElementById('date').value,
+                description: document.getElementById('description').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                property_name: document.getElementById('property_name').value || null,
+                memo: document.getElementById('memo').value || null
+            };
+
+            if (currentTab === 'expenses') {
+                data.category = document.getElementById('category').value;
+                if (!data.category) {
+                    showToast('Please select a category', 'error');
+                    return;
+                }
+            } else {
+                if (!data.property_name) {
+                    showToast('Please select a property for income', 'error');
+                    return;
+                }
+            }
+
+            try {
+                // Use PUT endpoints for updates
+                const endpoint = currentTab === 'expenses'
+                    ? `/review/expense/${data.transaction_id}`
+                    : `/review/income/${data.transaction_id}`;
+
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    showToast(`✓ Transaction ${isEdit ? 'updated' : 'added'} successfully!`, 'success');
+                    closeModal();
+                    await loadTransactions();
+                } else {
+                    const error = await response.json();
+                    showToast(`✕ Error: ${error.detail || 'Failed to save'}`, 'error');
+                }
+            } catch (error) {
+                showToast(`✕ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteTransaction(transactionId) {
+            if (!confirm('Are you sure you want to delete this transaction?')) {
+                return;
+            }
+
+            try {
+                const endpoint = currentTab === 'expenses'
+                    ? `/review/expense/${transactionId}`
+                    : `/review/income/${transactionId}`;
+
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showToast('✓ Transaction deleted successfully!', 'success');
+                    await loadTransactions();
+                } else {
+                    showToast('✕ Failed to delete transaction', 'error');
+                }
+            } catch (error) {
+                showToast(`✕ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

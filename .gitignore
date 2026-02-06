@@ -1,0 +1,56 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Processed data outputs
+bank_transactions_normalized.csv
+income_mapping_review.csv
+schedule_e_property_summary_*.csv
+
+# Project data directories
+data/processed/
+data/reports/
+
+# Local downloads (prevent accidental commits of live mapping file)
+/Users/*/Downloads/
+
+# Environment files (contain secrets)
+.env
+.env.production
+.env.local
+.env.*.local
+
+# SSL certificates and keys
+nginx/ssl/*.crt
+nginx/ssl/*.key
+nginx/ssl/*.pem
+
+# Logs
+logs/
+nginx/logs/
+*.log
+
+# Database files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Docker volumes
+docker-volumes/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Temporary directories
+$(pwd)/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

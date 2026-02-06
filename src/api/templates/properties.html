@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Management - Lust Rentals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #f1f5f9;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: var(--dark);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Content */
+        .content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--secondary), #059669);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: var(--white);
+        }
+
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--light-gray);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            position: sticky;
+            top: 0;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--light-gray);
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #fafafa;
+        }
+
+        tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-rental {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-business {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: var(--dark);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading */
+        .spinner {
+            border: 3px solid var(--light-gray);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+            display: none;
+        }
+
+        .spinner.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Info Banner */
+        .info-banner {
+            background: #dbeafe;
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Action Buttons in Table */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Global Navigation -->
+        <nav class="global-nav" id="globalNav">
+            <div class="nav-header">
+                <a href="/dashboard-v2" class="nav-brand">
+                    <span class="nav-brand-icon">&#127969;</span>
+                    <span>
+                        <span class="nav-brand-text">Lust Rentals</span>
+                        <span class="nav-brand-sub">Tax Reporting</span>
+                    </span>
+                </a>
+                <button class="nav-toggle" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Toggle navigation">
+                    &#9776;
+                </button>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-group">
+                    <span class="nav-group-label">Main</span>
+                    <a href="/dashboard-v2" class="nav-link">
+                        <span class="nav-link-icon">&#128200;</span>
+                        Dashboard
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Review</span>
+                    <a href="/review-enhanced" class="nav-link">
+                        <span class="nav-link-icon">&#10024;</span>
+                        Review Transactions
+                    </a>
+                    <a href="/review" class="nav-link">
+                        <span class="nav-link-icon">&#128269;</span>
+                        Classic Review
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Manage</span>
+                    <a href="/transactions" class="nav-link">
+                        <span class="nav-link-icon">&#128188;</span>
+                        Transactions
+                    </a>
+                    <a href="/properties-ui" class="nav-link active">
+                        <span class="nav-link-icon">&#127970;</span>
+                        Properties
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Tools</span>
+                    <a href="/docs" class="nav-link" target="_blank">
+                        <span class="nav-link-icon">&#128218;</span>
+                        API Docs
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>&#127970; Property Management</h1>
+                <p style="color: var(--gray); margin-top: 0.5rem;">Manage rental properties and business entities</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-success" onclick="showAddModal()">
+                    + Add Property
+                </button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div id="alert" class="alert"></div>
+
+            <!-- Info Banner -->
+            <div class="info-banner">
+                <strong style="color: var(--primary);">💡 Property Types:</strong>
+                <span style="color: var(--dark);">
+                    <strong>Business Entity</strong> (🏢) for LLC/company expenses  • <strong>Rental</strong> (🏠) for individual properties
+                </span>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="spinner" id="loading-spinner"></div>
+
+            <!-- Properties Table -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">Icon</th>
+                            <th>Property Name</th>
+                            <th>Type</th>
+                            <th>Address</th>
+                            <th style="width: 100px;">Status</th>
+                            <th style="width: 200px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="properties-tbody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Property Modal -->
+    <div id="property-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Property</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+
+            <form id="property-form" onsubmit="saveProperty(event)">
+                <div class="form-group">
+                    <label for="property-name">Property Name *</label>
+                    <input type="text" id="property-name" required maxlength="200">
+                </div>
+
+                <div class="form-group">
+                    <label for="property-type">Property Type *</label>
+                    <select id="property-type" required>
+                        <option value="rental">🏠 Rental Property</option>
+                        <option value="business_entity">🏢 Business Entity (LLC)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="property-address">Address</label>
+                    <input type="text" id="property-address" maxlength="500">
+                </div>
+
+                <div class="form-group">
+                    <label for="property-notes">Notes</label>
+                    <textarea id="property-notes"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="property-sort">Sort Order</label>
+                    <input type="number" id="property-sort" min="0" value="0">
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Property</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let properties = [];
+        let editingPropertyId = null;
+
+        // Load properties on page load
+        window.addEventListener('load', loadProperties);
+
+        async function loadProperties() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/properties/?include_inactive=true`);
+                properties = await response.json();
+                renderPropertiesTable();
+            } catch (error) {
+                showAlert(`Error loading properties: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderPropertiesTable() {
+            const tbody = document.getElementById('properties-tbody');
+
+            if (properties.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <h3>No Properties Yet</h3>
+                                <p>Click "Add Property" to create your first property</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = properties.map(property => `
+                <tr>
+                    <td style="font-size: 2rem; text-align: center;">
+                        ${property.property_type === 'business_entity' ? '🏢' : '🏠'}
+                    </td>
+                    <td><strong>${property.property_name}</strong></td>
+                    <td>
+                        <span class="badge ${property.property_type === 'business_entity' ? 'badge-business' : 'badge-rental'}">
+                            ${property.property_type === 'business_entity' ? 'Business Entity' : 'Rental Property'}
+                        </span>
+                    </td>
+                    <td>${property.address || '-'}</td>
+                    <td>
+                        <span class="badge ${property.is_active ? 'badge-active' : 'badge-inactive'}">
+                            ${property.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-small" onclick="editProperty(${property.id})">
+                                Edit
+                            </button>
+                            ${property.is_active
+                                ? `<button class="btn btn-danger btn-small" onclick="deactivateProperty(${property.id}, '${property.property_name}')">Deactivate</button>`
+                                : `<button class="btn btn-success btn-small" onclick="activateProperty(${property.id})">Activate</button>`
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddModal() {
+            editingPropertyId = null;
+            document.getElementById('modal-title').textContent = 'Add Property';
+            document.getElementById('property-form').reset();
+            document.getElementById('property-modal').classList.add('show');
+        }
+
+        function editProperty(propertyId) {
+            const property = properties.find(p => p.id === propertyId);
+            if (!property) return;
+
+            editingPropertyId = propertyId;
+            document.getElementById('modal-title').textContent = 'Edit Property';
+            document.getElementById('property-name').value = property.property_name;
+            document.getElementById('property-type').value = property.property_type;
+            document.getElementById('property-address').value = property.address || '';
+            document.getElementById('property-notes').value = property.notes || '';
+            document.getElementById('property-sort').value = property.sort_order;
+            document.getElementById('property-modal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('property-modal').classList.remove('show');
+            editingPropertyId = null;
+        }
+
+        async function saveProperty(event) {
+            event.preventDefault();
+
+            const propertyData = {
+                property_name: document.getElementById('property-name').value,
+                property_type: document.getElementById('property-type').value,
+                address: document.getElementById('property-address').value || null,
+                notes: document.getElementById('property-notes').value || null,
+                sort_order: parseInt(document.getElementById('property-sort').value)
+            };
+
+            try {
+                let response;
+
+                if (editingPropertyId) {
+                    // Update existing property
+                    response = await fetch(`${API_BASE}/properties/${editingPropertyId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(propertyData)
+                    });
+                } else {
+                    // Create new property
+                    response = await fetch(`${API_BASE}/properties/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(propertyData)
+                    });
+                }
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to save property');
+                }
+
+                showAlert(`✅ Property ${editingPropertyId ? 'updated' : 'created'} successfully!`, 'success');
+                closeModal();
+                await loadProperties();
+
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function deactivateProperty(propertyId, propertyName) {
+            if (!confirm(`Deactivate "${propertyName}"?\n\nThis will hide it from selection dropdowns but preserve historical data.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/properties/${propertyId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to deactivate property');
+                }
+
+                showAlert(`✅ Property "${propertyName}" deactivated successfully!`, 'success');
+                await loadProperties();
+
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function activateProperty(propertyId) {
+            try {
+                const response = await fetch(`${API_BASE}/properties/${propertyId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_active: true })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to activate property');
+                }
+
+                showAlert(`✅ Property activated successfully!`, 'success');
+                await loadProperties();
+
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading-spinner').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-spinner').classList.remove('show');
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 5000);
+        }
+    </script>
+</body>
+</html>
