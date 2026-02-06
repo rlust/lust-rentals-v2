@@ -10,9 +10,13 @@ This module provides intelligent categorization for expenses using:
 
 import re
 import logging
-from typing import Tuple, Dict, List, Optional
+from typing import Tuple, Dict, List, Optional, Any
 from dataclasses import dataclass
 
+# Type alias for the rule evaluator function
+# Should take a dict of transaction fields and return (category, property_name, rule_name)
+# or (None, None, None)
+RuleEvaluator = Any 
 
 logger = logging.getLogger(__name__)
 
@@ -276,16 +280,18 @@ class EnhancedCategorizer:
     4. Amount-based heuristics (contextual)
     """
 
-    def __init__(self, merchant_db: Optional[Dict[str, str]] = None):
+    def __init__(self, merchant_db: Optional[Dict[str, str]] = None, rule_evaluator: Optional[RuleEvaluator] = None):
         """
         Initialize the categorizer.
 
         Args:
             merchant_db: Optional custom merchant database (uses default if None)
+            rule_evaluator: Optional object/function with evaluate_transaction method
         """
         self.merchant_db = merchant_db or MERCHANT_DATABASE
         self.patterns = CATEGORY_PATTERNS
         self.keywords = KEYWORD_CATEGORIES
+        self.rule_evaluator = rule_evaluator
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.logger.info(f"Initialized with {len(self.merchant_db)} merchants, "
@@ -320,6 +326,22 @@ class EnhancedCategorizer:
 
         # Combine all text fields for searching
         combined_text = f"{desc_lower} {payee_lower} {memo_lower}"
+
+        # Strategy 0: User-defined Rules (Highest priority)
+        if self.rule_evaluator:
+            # Construct transaction dict for rule evaluation
+            tx_data = {
+                "description": description,
+                "memo": memo,
+                "amount": str(amount),
+                "payee": payee
+            }
+            cat_rule, prop_rule, rule_name = self.rule_evaluator.evaluate_transaction(tx_data)
+            
+            if cat_rule:
+                return (cat_rule, 1.0, f"Matched rule: {rule_name}")
+            # Note: Property assignment from rules is handled separately in the processor,
+            # but if a rule sets a category, we return it here.
 
         # Strategy 1: Merchant database (highest confidence)
         result = self._match_merchant(combined_text)

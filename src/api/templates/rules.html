@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automation Rules - Lust Rentals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <style>
+        /* Reusing styles from properties.html plus some specifics */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2563eb; --primary-dark: #1e40af; --secondary: #10b981;
+            --danger: #ef4444; --warning: #f59e0b; --dark: #1e293b;
+            --gray: #64748b; --light-gray: #f1f5f9; --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: var(--white); padding: 2rem; border-radius: 1rem;
+            box-shadow: var(--shadow); margin-bottom: 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .content {
+            background: var(--white); padding: 2rem; border-radius: 1rem;
+            box-shadow: var(--shadow);
+        }
+        .btn {
+            padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem;
+            font-weight: 600; cursor: pointer; transition: all 0.3s;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            color: white;
+        }
+        .btn-primary { background: var(--primary); }
+        .btn-success { background: var(--secondary); }
+        .btn-danger { background: var(--danger); }
+        .btn-small { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--light-gray); }
+        th { background: var(--light-gray); font-weight: 600; }
+        
+        .badge {
+            padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-cat { background: #dbeafe; color: #1e40af; }
+        .badge-prop { background: #d1fae5; color: #065f46; }
+        
+        /* Modal */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            align-items: center; justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--white); padding: 2rem; border-radius: 1rem;
+            width: 500px; max-width: 90%;
+        }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray);
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Global Navigation would go here, omitting for brevity in this snippet -->
+        <nav class="global-nav" id="globalNav">
+            <div class="nav-header">
+                <a href="/dashboard-v2" class="nav-brand">
+                    <span class="nav-brand-icon">&#127969;</span>
+                    <span class="nav-brand-text">Lust Rentals</span>
+                </a>
+            </div>
+            <div class="nav-menu">
+                <a href="/dashboard-v2" class="nav-link">Dashboard</a>
+                <a href="/review-enhanced" class="nav-link">Review</a>
+                <a href="/properties-ui" class="nav-link">Properties</a>
+                <a href="/rules-ui" class="nav-link active">Rules</a>
+            </div>
+        </nav>
+
+        <div class="header">
+            <div>
+                <h1>&#9881; Automation Rules</h1>
+                <p style="color: var(--gray);">Define rules to automatically categorize transactions</p>
+            </div>
+            <button class="btn btn-success" onclick="showAddModal()">+ Add Rule</button>
+        </div>
+
+        <div class="content">
+            <div id="alert" style="display:none; padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem;"></div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rule Name</th>
+                        <th>Criteria</th>
+                        <th>Action</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="rules-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="rule-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-bottom: 1.5rem;">Add Rule</h2>
+            <form id="rule-form" onsubmit="saveRule(event)">
+                <div class="form-group">
+                    <label>Rule Name</label>
+                    <input type="text" id="rule-name" required placeholder="e.g. Home Depot Repairs">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>If Field...</label>
+                        <select id="criteria-field">
+                            <option value="description">Description</option>
+                            <option value="memo">Memo</option>
+                            <option value="amount">Amount</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Matches...</label>
+                        <select id="criteria-match-type">
+                            <option value="contains">Contains</option>
+                            <option value="starts_with">Starts With</option>
+                            <option value="equals">Equals</option>
+                            <option value="regex">Regex Pattern</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Value</label>
+                    <input type="text" id="criteria-value" required placeholder="e.g. Home Depot">
+                </div>
+
+                <div style="border-top: 1px solid #eee; margin: 1.5rem 0;"></div>
+
+                <div class="form-group">
+                    <label>Then Set Action...</label>
+                    <select id="action-type" onchange="toggleActionValue()">
+                        <option value="set_category">Set Category</option>
+                        <option value="set_property">Set Property</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>To Value</label>
+                    <input type="text" id="action-value" required list="categories-list">
+                    <datalist id="categories-list">
+                        <!-- Populated via JS -->
+                    </datalist>
+                </div>
+
+                <div class="form-group">
+                    <label>Priority (Higher runs first)</label>
+                    <input type="number" id="rule-priority" value="10">
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn" style="background:var(--gray)" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let rules = [];
+        let editingId = null;
+        let properties = [];
+        let categories = [];
+
+        window.onload = async () => {
+            await Promise.all([loadRules(), loadMetadata()]);
+        };
+
+        async function loadMetadata() {
+            try {
+                const [propsResp, catsResp] = await Promise.all([
+                    fetch(`${API_BASE}/review/properties`),
+                    fetch(`${API_BASE}/review/categories`)
+                ]);
+                properties = await propsResp.json();
+                categories = await catsResp.json();
+                updateDataList();
+            } catch (e) { console.error(e); }
+        }
+
+        function updateDataList() {
+            const list = document.getElementById('categories-list');
+            list.innerHTML = '';
+            const actionType = document.getElementById('action-type').value;
+            const items = actionType === 'set_category' ? categories : properties;
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                list.appendChild(option);
+            });
+        }
+
+        function toggleActionValue() {
+            updateDataList();
+            document.getElementById('action-value').value = '';
+        }
+
+        async function loadRules() {
+            const res = await fetch(`${API_BASE}/rules/`);
+            rules = await res.json();
+            renderRules();
+        }
+
+        function renderRules() {
+            const tbody = document.getElementById('rules-tbody');
+            tbody.innerHTML = rules.map(rule => `
+                <tr>
+                    <td><strong>${rule.name}</strong></td>
+                    <td>If <code>${rule.criteria_field}</code> ${rule.criteria_match_type} "<b>${rule.criteria_value}</b>"</td>
+                    <td>
+                        <span class="badge ${rule.action_type === 'set_category' ? 'badge-cat' : 'badge-prop'}">
+                            ${rule.action_type === 'set_category' ? 'Category' : 'Property'}
+                        </span>
+                        = ${rule.action_value}
+                    </td>
+                    <td>${rule.priority}</td>
+                    <td>${rule.is_active ? '✅' : '❌'}</td>
+                    <td>
+                        <button class="btn btn-small btn-primary" onclick="editRule(${rule.id})">Edit</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteRule(${rule.id})">Del</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddModal() {
+            editingId = null;
+            document.getElementById('modal-title').innerText = 'Add Rule';
+            document.getElementById('rule-form').reset();
+            document.getElementById('rule-modal').classList.add('show');
+            updateDataList();
+        }
+
+        function closeModal() {
+            document.getElementById('rule-modal').classList.remove('show');
+        }
+
+        function editRule(id) {
+            const rule = rules.find(r => r.id === id);
+            editingId = id;
+            document.getElementById('modal-title').innerText = 'Edit Rule';
+            document.getElementById('rule-name').value = rule.name;
+            document.getElementById('criteria-field').value = rule.criteria_field;
+            document.getElementById('criteria-match-type').value = rule.criteria_match_type;
+            document.getElementById('criteria-value').value = rule.criteria_value;
+            document.getElementById('action-type').value = rule.action_type;
+            toggleActionValue(); 
+            document.getElementById('action-value').value = rule.action_value;
+            document.getElementById('rule-priority').value = rule.priority;
+            document.getElementById('rule-modal').classList.add('show');
+        }
+
+        async function saveRule(e) {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('rule-name').value,
+                criteria_field: document.getElementById('criteria-field').value,
+                criteria_match_type: document.getElementById('criteria-match-type').value,
+                criteria_value: document.getElementById('criteria-value').value,
+                action_type: document.getElementById('action-type').value,
+                action_value: document.getElementById('action-value').value,
+                priority: parseInt(document.getElementById('rule-priority').value)
+            };
+
+            const method = editingId ? 'PUT' : 'POST';
+            const url = editingId ? `${API_BASE}/rules/${editingId}` : `${API_BASE}/rules/`;
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    closeModal();
+                    loadRules();
+                } else {
+                    alert('Error saving rule');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error saving rule');
+            }
+        }
+
+        async function deleteRule(id) {
+            if (!confirm('Are you sure?')) return;
+            await fetch(`${API_BASE}/rules/${id}`, { method: 'DELETE' });
+            loadRules();
+        }
+    </script>
+</body>
+</html>

@@ -10,6 +10,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from src.review.manager import ReviewManager
+from src.review.rules_manager import RulesManager
 from src.utils.config import AppConfig, configure_logging, load_config
 from src.utils.sqlite_migrations import Migration, apply_migrations
 from src.categorization.categorizer import EnhancedCategorizer
@@ -42,8 +43,11 @@ class FinancialDataProcessor:
         self.logger.info("Initialized FinancialDataProcessor", extra={"data_dir": str(self.data_dir)})
         apply_migrations(self.processed_db_path, _PROCESSED_MIGRATIONS)
 
-        # Initialize enhanced categorizer
-        self.categorizer = EnhancedCategorizer()
+        # Initialize rules manager
+        self.rules_manager = RulesManager(self.data_dir / "overrides" / "rules.db")
+
+        # Initialize enhanced categorizer with rules
+        self.categorizer = EnhancedCategorizer(rule_evaluator=self.rules_manager)
         self.logger.info(f"Initialized categorizer with {self.categorizer.get_statistics()}")
 
     def load_income_data(self, file_path: Optional[Union[str, Path]] = None) -> DataFrame:

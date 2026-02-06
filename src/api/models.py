@@ -52,3 +52,32 @@ class BulkExpenseOverrideRequest(BaseModel):
     """Request for bulk expense override operations."""
 
     overrides: List[Dict[str, Optional[str]]]  # [{"transaction_id": "...", "category": "...", "property_name": "..."}]
+
+
+class RuleCreate(BaseModel):
+    """Request to create a new automation rule."""
+    name: str
+    criteria_field: str  # 'description', 'memo', 'amount'
+    criteria_match_type: str  # 'contains', 'starts_with', 'equals', 'regex'
+    criteria_value: str
+    action_type: str  # 'set_category', 'set_property'
+    action_value: str
+    priority: int = 10
+
+
+class RuleUpdate(BaseModel):
+    """Request to update an existing rule."""
+    name: Optional[str] = None
+    criteria_field: Optional[str] = None
+    criteria_match_type: Optional[str] = None
+    criteria_value: Optional[str] = None
+    action_type: Optional[str] = None
+    action_value: Optional[str] = None
+    is_active: Optional[bool] = None
+    priority: Optional[int] = None
+
+
+class RuleResponse(RuleCreate):
+    """Response model for a rule."""
+    id: int
+    is_active: bool

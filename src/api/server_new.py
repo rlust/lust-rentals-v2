@@ -18,7 +18,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from src.api.dependencies import get_config, CONFIG
-from src.api.routes import processing, reports, exports, review, properties, backup
+from src.api.routes import processing, reports, exports, review, properties, backup, rules
 from src.utils.config import configure_logging
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,9 @@ app.include_router(review.router, prefix="/review", tags=["Review & Categorizati
 # Property management routes handle: /properties (CRUD operations)
 app.include_router(properties.router, prefix="/properties", tags=["Property Management"])
 
+# Automation Rules routes handle: /rules (CRUD operations)
+app.include_router(rules.router, prefix="/rules", tags=["Automation Rules"])
+
 # Backup and export routes handle: /backup/* (backup, export, restore)
 app.include_router(backup.router, prefix="/backup", tags=["Backup & Export"])
 
@@ -85,6 +88,12 @@ def review_dashboard(request: Request):
 def properties_management(request: Request):
     """Render the property management UI."""
     return templates.TemplateResponse("properties.html", {"request": request})
+
+
+@app.get("/rules-ui", response_class=HTMLResponse)
+def rules_management(request: Request):
+    """Render the automation rules management UI."""
+    return templates.TemplateResponse("rules.html", {"request": request})
 
 
 @app.get("/review-enhanced", response_class=HTMLResponse)
