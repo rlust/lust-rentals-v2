@@ -322,31 +322,43 @@ class PropertyReportGenerator:
             if overrides_attached:
                 cursor.execute(f"ATTACH DATABASE '{overrides_db_path}' AS overrides_db")
                 query = """
+                    WITH expense_rows AS (
+                        SELECT
+                            COALESCE(NULLIF(TRIM(eo.property_name), ''), NULLIF(TRIM(pe.property_name), ''), 'Unassigned') AS property_name,
+                            COALESCE(NULLIF(TRIM(eo.category), ''), NULLIF(TRIM(pe.category), ''), 'other') AS category,
+                            ABS(COALESCE(pe.debit_amount, pe.amount, 0)) AS debit_amount
+                        FROM processed_expenses pe
+                        LEFT JOIN overrides_db.expense_overrides eo
+                            ON pe.transaction_id = eo.transaction_id
+                        WHERE strftime('%Y', pe.date) = ?
+                    )
                     SELECT
-                        COALESCE(eo.property_name, pe.property_name) AS property_name,
-                        COALESCE(eo.category, pe.category) AS category,
-                        SUM(ABS(COALESCE(pe.debit_amount, pe.amount, 0))) AS debit_sum,
+                        property_name,
+                        category,
+                        SUM(debit_amount) AS debit_sum,
                         COUNT(*) AS line_count
-                    FROM processed_expenses pe
-                    LEFT JOIN overrides_db.expense_overrides eo
-                        ON pe.transaction_id = eo.transaction_id
-                    WHERE strftime('%Y', pe.date) = ?
-                    GROUP BY
-                        COALESCE(eo.property_name, pe.property_name),
-                        COALESCE(eo.category, pe.category)
-                    ORDER BY property_name, category
+                    FROM expense_rows
+                    GROUP BY property_name, category
+                    ORDER BY property_name, debit_sum DESC, category
                 """
             else:
                 query = """
+                    WITH expense_rows AS (
+                        SELECT
+                            COALESCE(NULLIF(TRIM(pe.property_name), ''), 'Unassigned') AS property_name,
+                            COALESCE(NULLIF(TRIM(pe.category), ''), 'other') AS category,
+                            ABS(COALESCE(pe.debit_amount, pe.amount, 0)) AS debit_amount
+                        FROM processed_expenses pe
+                        WHERE strftime('%Y', pe.date) = ?
+                    )
                     SELECT
-                        pe.property_name AS property_name,
-                        pe.category AS category,
-                        SUM(ABS(COALESCE(pe.debit_amount, pe.amount, 0))) AS debit_sum,
+                        property_name,
+                        category,
+                        SUM(debit_amount) AS debit_sum,
                         COUNT(*) AS line_count
-                    FROM processed_expenses pe
-                    WHERE strftime('%Y', pe.date) = ?
-                    GROUP BY pe.property_name, pe.category
-                    ORDER BY property_name, category
+                    FROM expense_rows
+                    GROUP BY property_name, category
+                    ORDER BY property_name, debit_sum DESC, category
                 """
 
             cursor.execute(query, (str(year),))
@@ -988,14 +1000,20 @@ class PropertyReportGenerator:
             zebra_index = 0
 
             for prop_name in sorted(grouped.keys(), key=lambda x: x.lower()):
-                prop_rows = sorted(grouped[prop_name], key=lambda x: x["expense_type"])
-                prop_total = sum(row["debit_amount"] for row in prop_rows)
-                prop_count = sum(row["line_count"] for row in prop_rows)
+                prop_rows = sorted(grouped[prop_name], key=lambda x: x["debit_amount"], reverse=True)
 
-                first_row = True
+                ws_pivot_summary.cell(row=current_row, column=1, value=prop_name)
+                for col_idx in range(1, 4):
+                    cell = ws_pivot_summary.cell(row=current_row, column=col_idx)
+                    cell.font = Font(name='Calibri', size=11, bold=True)
+                    cell.border = thin_border
+                    cell.fill = white_fill
+                    cell.alignment = Alignment(horizontal='left', vertical='center')
+                current_row += 1
+
                 for row in prop_rows:
-                    ws_pivot_summary.cell(row=current_row, column=1, value=prop_name if first_row else "")
-                    ws_pivot_summary.cell(row=current_row, column=2, value=row["expense_type"])
+                    subtotal_label = f"Sum: {row['expense_type']} +{row['line_count']} lines"
+                    ws_pivot_summary.cell(row=current_row, column=2, value=subtotal_label)
                     ws_pivot_summary.cell(row=current_row, column=3, value=row["debit_amount"])
 
                     row_fill = alt_row_fill if zebra_index % 2 == 0 else white_fill
@@ -1003,10 +1021,7 @@ class PropertyReportGenerator:
                         cell = ws_pivot_summary.cell(row=current_row, column=col_idx)
                         cell.border = thin_border
                         cell.fill = row_fill
-                        if col_idx == 1 and first_row:
-                            cell.font = Font(name='Calibri', size=11, bold=True)
-                        else:
-                            cell.font = Font(name='Calibri', size=11)
+                        cell.font = Font(name='Calibri', size=11)
                         if col_idx == 3:
                             cell.number_format = '$#,##0.00'
                             cell.alignment = Alignment(horizontal='right', vertical='center')
@@ -1015,27 +1030,22 @@ class PropertyReportGenerator:
 
                     current_row += 1
                     zebra_index += 1
-                    first_row = False
+                    grand_total += row["debit_amount"]
+                    grand_count += row["line_count"]
 
-                subtotal_label = f"{prop_name} +{prop_count} lines,{prop_total:,.2f}"
-                ws_pivot_summary.cell(row=current_row, column=1, value=subtotal_label)
-                for col_idx in range(1, 4):
-                    cell = ws_pivot_summary.cell(row=current_row, column=col_idx)
-                    cell.font = Font(name='Calibri', size=11, bold=True)
-                    cell.border = thin_border
-                    cell.fill = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
-                current_row += 1
-
-                grand_total += prop_total
-                grand_count += prop_count
-
-            grand_label = f"GRAND TOTAL +{grand_count} lines,{grand_total:,.2f}"
+            grand_label = f"GRAND TOTAL +{grand_count} lines"
             ws_pivot_summary.cell(row=current_row, column=1, value=grand_label)
+            ws_pivot_summary.cell(row=current_row, column=3, value=grand_total)
             for col_idx in range(1, 4):
                 cell = ws_pivot_summary.cell(row=current_row, column=col_idx)
                 cell.font = Font(name='Calibri', size=11, bold=True)
                 cell.border = thin_border
                 cell.fill = PatternFill(start_color='CBD5E1', end_color='CBD5E1', fill_type='solid')
+                if col_idx == 3:
+                    cell.number_format = '$#,##0.00'
+                    cell.alignment = Alignment(horizontal='right', vertical='center')
+                else:
+                    cell.alignment = Alignment(horizontal='left', vertical='center')
         else:
             ws_pivot_summary.append(["No pivot summary available for this year."])
 
