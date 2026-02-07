@@ -1,0 +1,13 @@
+DATABASE EXPORT SUMMARY
+==================================================
+Export Date: 2026-02-06 20:31:38
+Year Filter: 2025
+Tables Exported: 6
+
+EXPORTED FILES:
+  - export_audit: export_audit_2025_20260206_203138.csv
+  - processed_expenses: processed_expenses_2025_20260206_203138.csv
+  - processed_income: processed_income_2025_20260206_203138.csv
+  - properties: properties_2025_20260206_203138.csv
+  - schema_version: schema_version_2025_20260206_203138.csv
+  - sqlite_sequence: sqlite_sequence_2025_20260206_203138.csv

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 from datetime import datetime
 from typing import Dict, Optional
 
@@ -10,7 +11,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 import pandas as pd
 
-from src.api.dependencies import get_config, get_processor, get_tax_reporter, get_property_reporter
+from src.api.dependencies import get_config, get_tax_reporter, get_property_reporter
 from src.api.models import ReportRequest
 
 router = APIRouter()
@@ -44,7 +45,7 @@ REPORT_ARTIFACTS = {
         "display_name": "Property Income & Expense Report (PDF)",
     },
     "property_report_excel": {
-        "filename": "property_report_{year}.xlsx",
+        "filename": "Yearly Income & Expense Lust Rentals LLC.xlsx",
         "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "display_name": "Property Income & Expense Report (Excel)",
     },
@@ -77,6 +78,69 @@ def get_report_status_data(year: Optional[int] = None) -> Dict[str, object]:
         }
 
     return {"year": resolved_year, "artifacts": artifacts}
+
+
+def _get_table_columns(conn: sqlite3.Connection, table_name: str) -> list[str]:
+    cursor = conn.execute(f"PRAGMA table_info({table_name})")
+    return [row[1] for row in cursor.fetchall()]
+
+
+def _resolve_date_column(columns: list[str]) -> Optional[str]:
+    if "date" in columns:
+        return "date"
+    return next((col for col in columns if "date" in col.lower()), None)
+
+
+def _year_filter_clause(date_col: Optional[str]) -> str:
+    if not date_col:
+        return ""
+    return f"WHERE strftime('%Y', {date_col}) = ?"
+
+
+def _fetch_summary(
+    conn: sqlite3.Connection,
+    table_name: str,
+    date_col: Optional[str],
+    year: int,
+) -> tuple[float, int]:
+    clause = _year_filter_clause(date_col)
+    params = [str(year)] if clause else []
+    query = f"SELECT COALESCE(SUM(amount), 0), COUNT(*) FROM {table_name} {clause}"
+    total, count = conn.execute(query, params).fetchone()
+    return float(total or 0), int(count or 0)
+
+
+def _fetch_grouped_totals(
+    conn: sqlite3.Connection,
+    table_name: str,
+    group_col: str,
+    date_col: Optional[str],
+    year: int,
+) -> Dict[str, float]:
+    clause = _year_filter_clause(date_col)
+    params = [str(year)] if clause else []
+    query = (
+        f"SELECT {group_col}, SUM(amount) "
+        f"FROM {table_name} {clause} GROUP BY {group_col}"
+    )
+    rows = conn.execute(query, params).fetchall()
+    return {
+        str(key): float(total)
+        for key, total in rows
+        if key is not None and str(key).strip()
+    }
+
+
+def _load_table_for_year(
+    conn: sqlite3.Connection,
+    table_name: str,
+    date_col: Optional[str],
+    year: int,
+) -> pd.DataFrame:
+    clause = _year_filter_clause(date_col)
+    params = [str(year)] if clause else []
+    query = f"SELECT * FROM {table_name} {clause}"
+    return pd.read_sql_query(query, conn, params=params)
 
 
 @router.post("/annual")
@@ -215,19 +279,12 @@ def generate_property_pdf_report(http_request: Request, request: ReportRequest) 
 
 @router.post("/property/excel")
 def generate_property_excel_report(http_request: Request, request: ReportRequest) -> dict:
-    """Generate a simplified Excel report showing income and expenses by property.
-
-    This endpoint creates a streamlined Excel workbook with:
-    - Overall summary (total income, expenses, net)
-    - Property breakdown table with formatted cells
-    - Professional styling with currency formatting
-
-    Returns summary data including file path if save_outputs=True.
-    """
+    """Generate the yearly Excel report with summary, income, expenses, and property breakdown sheets."""
     try:
         property_reporter = get_property_reporter()
+        resolved_year = resolve_report_year(request.year)
         file_path, summary = property_reporter.generate_excel_report(
-            year=request.year or (datetime.now().year - 1),
+            year=resolved_year,
             save_to_file=request.save_outputs
         )
 
@@ -301,76 +358,69 @@ def get_multi_year_report(start_year: int, end_year: int) -> dict:
     if (end_year - start_year) > 10:
         raise HTTPException(status_code=400, detail="Maximum 10 years per request")
 
-    processor = get_processor()
     years_data = []
     years_with_data = []
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
-    for year in range(start_year, end_year + 1):
-        # Check if processed data exists for this year
-        income_file = processor.processed_data_dir / f"processed_income_{year}.csv"
-        expense_file = processor.processed_data_dir / f"processed_expenses_{year}.csv"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail="Processed database not found. Run processing first.")
 
-        # Fallback to non-year-specific files
-        if not income_file.exists():
-            income_file = processor.processed_data_dir / "processed_income.csv"
-        if not expense_file.exists():
-            expense_file = processor.processed_data_dir / "processed_expenses.csv"
+    try:
+        with sqlite3.connect(db_path) as conn:
+            income_columns = _get_table_columns(conn, "processed_income")
+            expense_columns = _get_table_columns(conn, "processed_expenses")
 
-        if income_file.exists() and expense_file.exists():
-            try:
-                income_df = pd.read_csv(income_file)
-                expense_df = pd.read_csv(expense_file)
+            if not income_columns and not expense_columns:
+                raise HTTPException(
+                    status_code=404,
+                    detail="No processed data found. Please process your bank transactions first using the 'Run processor' button.",
+                )
 
-                # Filter by year if date columns exist
-                if 'date' in income_df.columns:
-                    income_df['date'] = pd.to_datetime(income_df['date'], errors='coerce')
-                    income_df = income_df[income_df['date'].dt.year == year]
+            income_date_col = _resolve_date_column(income_columns)
+            expense_date_col = _resolve_date_column(expense_columns)
 
-                if 'date' in expense_df.columns:
-                    expense_df['date'] = pd.to_datetime(expense_df['date'], errors='coerce')
-                    expense_df = expense_df[expense_df['date'].dt.year == year]
+            for year in range(start_year, end_year + 1):
+                total_income, income_count = _fetch_summary(
+                    conn, "processed_income", income_date_col, year
+                ) if income_columns else (0.0, 0)
+                total_expenses, expense_count = _fetch_summary(
+                    conn, "processed_expenses", expense_date_col, year
+                ) if expense_columns else (0.0, 0)
 
-                total_income = float(income_df['amount'].sum()) if 'amount' in income_df.columns else 0.0
-                total_expenses = float(expense_df['amount'].sum()) if 'amount' in expense_df.columns else 0.0
                 net_income = total_income - total_expenses
 
-                # Get property breakdown
-                properties = {}
-                if 'property_name' in income_df.columns:
-                    property_income = income_df.groupby('property_name')['amount'].sum()
-                    properties = {prop: float(amt) for prop, amt in property_income.items() if pd.notna(prop)}
+                properties = (
+                    _fetch_grouped_totals(
+                        conn, "processed_income", "property_name", income_date_col, year
+                    )
+                    if income_columns and "property_name" in income_columns
+                    else {}
+                )
+                categories = (
+                    _fetch_grouped_totals(
+                        conn, "processed_expenses", "category", expense_date_col, year
+                    )
+                    if expense_columns and "category" in expense_columns
+                    else {}
+                )
 
-                # Get category breakdown
-                categories = {}
-                if 'category' in expense_df.columns:
-                    category_expenses = expense_df.groupby('category')['amount'].sum()
-                    categories = {cat: float(amt) for cat, amt in category_expenses.items() if pd.notna(cat)}
+                has_data = (income_count + expense_count) > 0
+                if has_data:
+                    years_with_data.append(year)
 
                 years_data.append({
                     "year": year,
                     "total_income": total_income,
                     "total_expenses": total_expenses,
                     "net_income": net_income,
-                    "transaction_count": len(income_df) + len(expense_df),
+                    "transaction_count": income_count + expense_count,
                     "properties": properties,
                     "expense_categories": categories,
-                    "has_data": True
+                    "has_data": has_data,
+                    "error": None if has_data else "No processed data found"
                 })
-                years_with_data.append(year)
-
-            except Exception as e:
-                logger.exception(f"Error processing year {year}")
-                years_data.append({
-                    "year": year,
-                    "has_data": False,
-                    "error": str(e)
-                })
-        else:
-            years_data.append({
-                "year": year,
-                "has_data": False,
-                "error": "No processed data found"
-            })
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
 
     # Calculate aggregate statistics
     if years_with_data:
@@ -436,14 +486,11 @@ def get_data_quality_metrics(year: Optional[int] = None) -> dict:
     Returns:
         Dictionary with quality metrics and recommendations
     """
-    processor = get_processor()
     resolved_year = year or datetime.now().year
+    db_path = get_config().data_dir / "processed" / "processed.db"
 
-    # Load processed data
-    income_file = processor.processed_data_dir / "processed_income.csv"
-    expense_file = processor.processed_data_dir / "processed_expenses.csv"
-    income_review_file = processor.processed_data_dir / "income_mapping_review.csv"
-    expense_review_file = processor.processed_data_dir / "expense_category_review.csv"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail="Processed database not found. Run processing first.")
 
     metrics = {
         "year": resolved_year,
@@ -454,16 +501,30 @@ def get_data_quality_metrics(year: Optional[int] = None) -> dict:
         "recommendations": []
     }
 
+    try:
+        with sqlite3.connect(db_path) as conn:
+            income_columns = _get_table_columns(conn, "processed_income")
+            expense_columns = _get_table_columns(conn, "processed_expenses")
+
+            income_date_col = _resolve_date_column(income_columns) if income_columns else None
+            expense_date_col = _resolve_date_column(expense_columns) if expense_columns else None
+
+            income_df = (
+                _load_table_for_year(conn, "processed_income", income_date_col, resolved_year)
+                if income_columns
+                else pd.DataFrame()
+            )
+            expense_df = (
+                _load_table_for_year(conn, "processed_expenses", expense_date_col, resolved_year)
+                if expense_columns
+                else pd.DataFrame()
+            )
+    except sqlite3.Error as exc:
+        raise HTTPException(status_code=500, detail=f"Database error: {exc}") from exc
+
     # Analyze income data
-    if income_file.exists():
+    if not income_df.empty:
         try:
-            income_df = pd.read_csv(income_file)
-
-            # Filter by year if date column exists
-            if 'date' in income_df.columns:
-                income_df['date'] = pd.to_datetime(income_df['date'], errors='coerce')
-                income_df = income_df[income_df['date'].dt.year == resolved_year]
-
             total_income = len(income_df)
 
             # Count mapped vs unmapped
@@ -471,18 +532,23 @@ def get_data_quality_metrics(year: Optional[int] = None) -> dict:
                 mapped = len(income_df[income_df['mapping_status'].isin(['mapped', 'overridden'])])
                 unmapped = total_income - mapped
                 mapping_rate = (mapped / total_income * 100) if total_income > 0 else 0
+                pending_review = len(
+                    income_df[~income_df['mapping_status'].isin(['mapped', 'overridden'])]
+                )
             else:
                 # Fallback: check if property_name is set
                 mapped = len(income_df[income_df['property_name'].notna()])
                 unmapped = total_income - mapped
                 mapping_rate = (mapped / total_income * 100) if total_income > 0 else 0
+                pending_review = unmapped
 
             metrics["income_metrics"] = {
                 "total_transactions": total_income,
                 "mapped_count": mapped,
                 "unmapped_count": unmapped,
                 "mapping_rate_pct": round(mapping_rate, 2),
-                "total_amount": float(income_df['amount'].sum()) if 'amount' in income_df.columns else 0.0
+                "total_amount": float(income_df['amount'].sum()) if 'amount' in income_df.columns else 0.0,
+                "pending_review_count": int(pending_review),
             }
 
             metrics["data_available"] = True
@@ -501,15 +567,8 @@ def get_data_quality_metrics(year: Optional[int] = None) -> dict:
             metrics["income_metrics"] = {"error": str(e)}
 
     # Analyze expense data
-    if expense_file.exists():
+    if not expense_df.empty:
         try:
-            expense_df = pd.read_csv(expense_file)
-
-            # Filter by year if date column exists
-            if 'date' in expense_df.columns:
-                expense_df['date'] = pd.to_datetime(expense_df['date'], errors='coerce')
-                expense_df = expense_df[expense_df['date'].dt.year == resolved_year]
-
             total_expenses = len(expense_df)
 
             # Count categorized vs other
@@ -527,10 +586,21 @@ def get_data_quality_metrics(year: Optional[int] = None) -> dict:
             if 'confidence' in expense_df.columns:
                 confidence_stats = {
                     "high_confidence_count": len(expense_df[expense_df['confidence'] >= 0.85]),
-                    "medium_confidence_count": len(expense_df[(expense_df['confidence'] >= 0.60) & (expense_df['confidence'] < 0.85)]),
+                    "medium_confidence_count": len(
+                        expense_df[(expense_df['confidence'] >= 0.60) & (expense_df['confidence'] < 0.85)]
+                    ),
                     "low_confidence_count": len(expense_df[expense_df['confidence'] < 0.60]),
                     "average_confidence": round(float(expense_df['confidence'].mean()), 3)
                 }
+
+            pending_review = 0
+            if 'category' in expense_df.columns:
+                pending_mask = expense_df['category'].fillna("").str.lower().isin(
+                    ["", "other", "uncategorized"]
+                )
+                if 'category_status' in expense_df.columns:
+                    pending_mask &= expense_df['category_status'].fillna("original") != "overridden"
+                pending_review = int(pending_mask.sum())
 
             metrics["expense_metrics"] = {
                 "total_transactions": total_expenses,
@@ -538,6 +608,7 @@ def get_data_quality_metrics(year: Optional[int] = None) -> dict:
                 "uncategorized_count": uncategorized,
                 "categorization_rate_pct": round(categorization_rate, 2),
                 "total_amount": float(expense_df['amount'].sum()) if 'amount' in expense_df.columns else 0.0,
+                "pending_review_count": pending_review,
                 **confidence_stats
             }
 
@@ -564,21 +635,6 @@ def get_data_quality_metrics(year: Optional[int] = None) -> dict:
         except Exception as e:
             logger.exception("Error analyzing expense metrics")
             metrics["expense_metrics"] = {"error": str(e)}
-
-    # Load review items to count pending
-    if income_review_file.exists():
-        try:
-            review_income = pd.read_csv(income_review_file)
-            metrics["income_metrics"]["pending_review_count"] = len(review_income)
-        except:
-            pass
-
-    if expense_review_file.exists():
-        try:
-            review_expense = pd.read_csv(expense_review_file)
-            metrics["expense_metrics"]["pending_review_count"] = len(review_expense)
-        except:
-            pass
 
     # Calculate overall quality score
     if metrics["data_available"]:

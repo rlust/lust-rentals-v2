@@ -44,7 +44,7 @@ class TaxReporter:
             Dictionary containing summary metrics
         """
         year = year or (self.current_year - 1)
-        data = self.processor.process_financials(year)
+        data = self._load_processed_data(year)
 
         income_df = data['income']
         expense_df = data['expenses']
@@ -61,11 +61,7 @@ class TaxReporter:
             else self._summarize_income_sources(income_df)
         )
         review_counts = self._summarize_mapping_status(income_df)
-        unresolved_transactions = (
-            int(data['unresolved'].shape[0])
-            if isinstance(data.get('unresolved'), DataFrame)
-            else 0
-        )
+        unresolved_transactions = 0
 
         # Calculate expense breakdown with normalized categories
         if 'category' in expense_df.columns:
@@ -98,6 +94,10 @@ class TaxReporter:
             self._save_summary_to_pdf(summary, year)
 
         return summary
+
+    def _load_processed_data(self, year: int) -> Dict[str, DataFrame]:
+        """Load processed income/expense data from the database."""
+        return self.processor.load_processed_data(year)
 
     def _summarize_income_by_property(self, income_df: DataFrame) -> Dict[str, float]:
         """Summarize income by property using mapping metadata."""
@@ -364,7 +364,7 @@ class TaxReporter:
             Dictionary with Schedule E data
         """
         year = year or (self.current_year - 1)
-        data = self.processor.process_financials(year)
+        data = self._load_processed_data(year)
         
         income_df = data['income']
         expense_df = data['expenses']
@@ -510,7 +510,7 @@ class TaxReporter:
             Dictionary mapping property names to their Schedule E data
         """
         year = year or (self.current_year - 1)
-        data = self.processor.process_financials(year)
+        data = self._load_processed_data(year)
 
         income_df = data['income']
         expense_df = data['expenses']
@@ -724,7 +724,7 @@ class TaxReporter:
         self._add_schedule_e_table(pdf, aggregated)
 
         # Add expense category breakdown
-        data = self.processor.process_financials(year)
+        data = self._load_processed_data(year)
         expense_df = data['expenses']
         if not expense_df.empty and 'category' in expense_df.columns:
             pdf.ln(5)

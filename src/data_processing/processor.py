@@ -696,6 +696,39 @@ class FinancialDataProcessor:
                 return {"income": income_df, "expenses": expense_df}
             except FileNotFoundError:
                 raise bank_missing
+
+    def load_processed_data(self, year: Optional[int] = None) -> Dict[str, DataFrame]:
+        """Load processed income and expense data from SQLite."""
+        if not self.processed_db_path.exists():
+            raise FileNotFoundError("Processed database not found.")
+
+        try:
+            with sqlite3.connect(self.processed_db_path) as conn:
+                income_df = pd.read_sql_query("SELECT * FROM processed_income", conn)
+                expense_df = pd.read_sql_query("SELECT * FROM processed_expenses", conn)
+        except sqlite3.OperationalError as exc:
+            if "no such table" in str(exc):
+                raise FileNotFoundError("Processed database missing required tables.") from exc
+            raise
+
+        if year is not None:
+            income_df = self._filter_dataframe_by_year(income_df, year)
+            expense_df = self._filter_dataframe_by_year(expense_df, year)
+
+        if income_df.empty and expense_df.empty:
+            raise FileNotFoundError("No processed data found in database.")
+
+        return {"income": income_df, "expenses": expense_df}
+
+    def _filter_dataframe_by_year(self, df: DataFrame, year: int) -> DataFrame:
+        """Filter a DataFrame to a specific year using the first date-like column."""
+        date_col = next((col for col in df.columns if "date" in col.lower()), None)
+        if not date_col:
+            return df
+
+        filtered = df.copy()
+        filtered[date_col] = pd.to_datetime(filtered[date_col], errors="coerce")
+        return filtered[filtered[date_col].dt.year == year]
 _PROCESSED_MIGRATIONS: List[Migration] = [
     (
         1,

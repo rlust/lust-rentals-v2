@@ -7,12 +7,16 @@ Income and Expense by each property, available in both PDF and Excel formats.
 
 import os
 import logging
-from typing import Dict, List, Tuple
+import sqlite3
+from typing import Dict, List, Tuple, Optional
 from datetime import datetime
 from fpdf import FPDF as FPDF2
 import pandas as pd
 from openpyxl import Workbook
+from openpyxl.chart import BarChart, Reference
+from openpyxl.formatting.rule import CellIsRule
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 from pathlib import Path
@@ -20,6 +24,7 @@ from pathlib import Path
 from src.data_processing.processor import FinancialDataProcessor
 from src.utils.config import load_config
 from src.utils.date_helpers import safe_format_date
+from src.categorization.category_utils import normalize_category, get_display_name
 
 # Use FPDF2 (fpdf2 package) for PDF generation
 FPDF = FPDF2
@@ -56,7 +61,7 @@ class PropertyReportGenerator:
         logger.info(f"Generating property summary for year {year}")
 
         # Process financial data
-        result = self.processor.process_financials(year)
+        result = self.processor.load_processed_data(year)
         income_df = result["income"]
         expenses_df = result["expenses"]
 
@@ -172,6 +177,199 @@ class PropertyReportGenerator:
             'total_expenses': total_expenses,
             'total_net': total_income - total_expenses
         }
+
+    def _format_expense_type(self, category: Optional[str]) -> str:
+        """Format an expense category for display in the detail sheet."""
+        normalized = normalize_category(category)
+        if normalized == "hoa":
+            return "CONDO FEE"
+        return get_display_name(normalized).upper()
+
+    def _parse_expense_date(self, value: Optional[str]) -> Optional[datetime]:
+        if not value:
+            return None
+        if isinstance(value, datetime):
+            return value
+        try:
+            return datetime.fromisoformat(str(value))
+        except ValueError:
+            return None
+
+    def _load_expense_details(self, year: int) -> List[Dict]:
+        """Load expense detail rows with overrides and rule-based fallbacks."""
+        db_path = Path(self.processor.processed_db_path)
+        if not db_path.exists():
+            raise FileNotFoundError("Processed database not found. Run processing first.")
+
+        overrides_db_path = self.data_dir / "overrides" / "overrides.db"
+        rules_manager = getattr(self.processor, "rules_manager", None)
+
+        rows: List[Dict] = []
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            overrides_attached = overrides_db_path.exists()
+            if overrides_attached:
+                cursor.execute(f"ATTACH DATABASE '{overrides_db_path}' AS overrides_db")
+
+            if overrides_attached:
+                query = """
+                    SELECT
+                        pe.date,
+                        pe.debit_amount,
+                        pe.description,
+                        pe.reference,
+                        pe.memo,
+                        pe.account_name,
+                        pe.code,
+                        pe.amount,
+                        pe.transaction_id,
+                        COALESCE(eo.category, pe.category) as category,
+                        COALESCE(eo.property_name, pe.property_name) as property_name
+                    FROM processed_expenses pe
+                    LEFT JOIN overrides_db.expense_overrides eo ON pe.transaction_id = eo.transaction_id
+                    WHERE strftime('%Y', pe.date) = ?
+                    ORDER BY pe.date ASC
+                """
+            else:
+                query = """
+                    SELECT
+                        pe.date,
+                        pe.debit_amount,
+                        pe.description,
+                        pe.reference,
+                        pe.memo,
+                        pe.account_name,
+                        pe.code,
+                        pe.amount,
+                        pe.transaction_id,
+                        pe.category as category,
+                        pe.property_name as property_name
+                    FROM processed_expenses pe
+                    WHERE strftime('%Y', pe.date) = ?
+                    ORDER BY pe.date ASC
+                """
+            cursor.execute(query, (str(year),))
+            rows = [dict(row) for row in cursor.fetchall()]
+
+            if overrides_attached:
+                cursor.execute("DETACH DATABASE overrides_db")
+
+        details: List[Dict] = []
+        for row in rows:
+            property_name = row.get("property_name")
+            category = row.get("category")
+
+            needs_property = not property_name or str(property_name).strip().upper() == "UNASSIGNED"
+            needs_category = not category or str(category).strip() == ""
+
+            if rules_manager and (needs_property or needs_category):
+                tx_data = {
+                    "description": row.get("description", "") or "",
+                    "memo": row.get("memo", "") or "",
+                    "amount": str(row.get("amount", 0.0) or 0.0),
+                    "payee": row.get("account_name", "") or "",
+                }
+                actions, _ = rules_manager.evaluate_transaction(tx_data)
+                for action in actions:
+                    action_type = action.get("type")
+                    action_value = action.get("value")
+                    if action_type == "set_property" and needs_property and action_value:
+                        property_name = action_value
+                        needs_property = False
+                    elif action_type == "set_category" and needs_category and action_value:
+                        category = action_value
+                        needs_category = False
+
+            if not property_name or str(property_name).strip() == "":
+                property_name = "Unassigned"
+
+            debit_amount = row.get("debit_amount")
+            if debit_amount is None:
+                debit_amount = row.get("amount")
+            if debit_amount is None:
+                debit_amount = 0.0
+            debit_amount = abs(float(debit_amount))
+
+            details.append({
+                "date": self._parse_expense_date(row.get("date")),
+                "debit_amount": debit_amount,
+                "description": row.get("description", ""),
+                "reference": row.get("reference", ""),
+                "memo": row.get("memo", ""),
+                "vendor": row.get("memo", "") or row.get("description", ""),
+                "prop_code": row.get("code", ""),
+                "prop_name": property_name,
+                "expense_type": self._format_expense_type(category),
+            })
+
+        return details
+
+    def _load_expense_pivot_summary(self, year: int) -> List[Dict]:
+        """Load grouped expense totals by property and category for pivot summary."""
+        db_path = Path(self.processor.processed_db_path)
+        if not db_path.exists():
+            raise FileNotFoundError("Processed database not found. Run processing first.")
+
+        overrides_db_path = self.data_dir / "overrides" / "overrides.db"
+
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            overrides_attached = overrides_db_path.exists()
+            if overrides_attached:
+                cursor.execute(f"ATTACH DATABASE '{overrides_db_path}' AS overrides_db")
+                query = """
+                    SELECT
+                        COALESCE(eo.property_name, pe.property_name) AS property_name,
+                        COALESCE(eo.category, pe.category) AS category,
+                        SUM(ABS(COALESCE(pe.debit_amount, pe.amount, 0))) AS debit_sum,
+                        COUNT(*) AS line_count
+                    FROM processed_expenses pe
+                    LEFT JOIN overrides_db.expense_overrides eo
+                        ON pe.transaction_id = eo.transaction_id
+                    WHERE strftime('%Y', pe.date) = ?
+                    GROUP BY
+                        COALESCE(eo.property_name, pe.property_name),
+                        COALESCE(eo.category, pe.category)
+                    ORDER BY property_name, category
+                """
+            else:
+                query = """
+                    SELECT
+                        pe.property_name AS property_name,
+                        pe.category AS category,
+                        SUM(ABS(COALESCE(pe.debit_amount, pe.amount, 0))) AS debit_sum,
+                        COUNT(*) AS line_count
+                    FROM processed_expenses pe
+                    WHERE strftime('%Y', pe.date) = ?
+                    GROUP BY pe.property_name, pe.category
+                    ORDER BY property_name, category
+                """
+
+            cursor.execute(query, (str(year),))
+            rows = [dict(row) for row in cursor.fetchall()]
+
+            if overrides_attached:
+                cursor.execute("DETACH DATABASE overrides_db")
+
+        summary_rows: List[Dict] = []
+        for row in rows:
+            property_name = row.get("property_name")
+            if not property_name or str(property_name).strip() == "":
+                property_name = "Unassigned"
+            category = row.get("category")
+
+            summary_rows.append({
+                "property_name": str(property_name),
+                "expense_type": self._format_expense_type(category),
+                "debit_amount": float(row.get("debit_sum") or 0.0),
+                "line_count": int(row.get("line_count") or 0),
+            })
+
+        return summary_rows
 
     def generate_pdf_report(self, year: int, save_to_file: bool = True) -> Tuple[str, Dict]:
         """
@@ -444,7 +642,7 @@ class PropertyReportGenerator:
 
     def generate_excel_report(self, year: int, save_to_file: bool = True) -> Tuple[str, Dict]:
         """
-        Generate an Excel report showing detailed expenses by type and income by date for each property.
+        Generate an Excel report showing yearly income and expenses with property breakdown.
 
         Args:
             year: Tax year to generate report for
@@ -453,325 +651,504 @@ class PropertyReportGenerator:
         Returns:
             Tuple of (file_path, summary_data)
         """
-        logger.info(f"Generating property Excel report for year {year}")
+        logger.info(f"Generating yearly income/expense Excel report for year {year}")
 
-        # Get property summary data
-        summary = self.get_property_summary(year)
+        db_path = Path(self.processor.processed_db_path)
+        if not db_path.exists():
+            raise FileNotFoundError("Processed database not found. Run processing first.")
 
-        # Create workbook
+        try:
+            with sqlite3.connect(db_path) as conn:
+                income_df = pd.read_sql_query("SELECT * FROM processed_income", conn)
+                expenses_df = pd.read_sql_query("SELECT * FROM processed_expenses", conn)
+        except sqlite3.OperationalError as exc:
+            if "no such table" in str(exc):
+                raise FileNotFoundError(
+                    "No processed data found. Please process your bank transactions first using the 'Run processor' button."
+                ) from exc
+            raise
+        except sqlite3.Error as exc:
+            raise RuntimeError(f"Failed to read processed data: {exc}") from exc
+
+        if income_df.empty and expenses_df.empty:
+            raise FileNotFoundError("No processed data found for the requested year.")
+
+        if 'date' in income_df.columns:
+            income_df['date'] = pd.to_datetime(income_df['date'], errors='coerce')
+            income_df = income_df[income_df['date'].dt.year == year]
+
+        if 'date' in expenses_df.columns:
+            expenses_df['date'] = pd.to_datetime(expenses_df['date'], errors='coerce')
+            expenses_df = expenses_df[expenses_df['date'].dt.year == year]
+
+        if 'amount' in income_df.columns:
+            income_df['amount'] = income_df['amount'].abs()
+
+        if 'amount' in expenses_df.columns:
+            expenses_df['amount'] = expenses_df['amount'].abs()
+
+        if income_df.empty and expenses_df.empty:
+            raise FileNotFoundError("No processed data found for the requested year.")
+
+        property_breakdown = []
+        if 'property_name' in income_df.columns or 'property_name' in expenses_df.columns:
+            income_by_property = (
+                income_df.groupby('property_name')['amount'].sum()
+                if not income_df.empty and 'property_name' in income_df.columns and 'amount' in income_df.columns
+                else pd.Series(dtype=float)
+            )
+            expenses_by_property = (
+                expenses_df.groupby('property_name')['amount'].sum()
+                if not expenses_df.empty and 'property_name' in expenses_df.columns and 'amount' in expenses_df.columns
+                else pd.Series(dtype=float)
+            )
+
+            properties = sorted(set(income_by_property.index.tolist()) | set(expenses_by_property.index.tolist()))
+            for prop in properties:
+                if prop is None or str(prop).strip() == "":
+                    prop_name = "Unassigned"
+                else:
+                    prop_name = str(prop)
+                income_total = float(income_by_property.get(prop, 0.0))
+                expense_total = float(expenses_by_property.get(prop, 0.0))
+                property_breakdown.append({
+                    "Property": prop_name,
+                    "Income": round(income_total, 2),
+                    "Expenses": round(expense_total, 2),
+                })
+
+        property_breakdown_df = pd.DataFrame(property_breakdown)
+        if not property_breakdown_df.empty:
+            property_breakdown_df = property_breakdown_df.sort_values("Property")
+
+        total_income = float(income_df['amount'].sum()) if 'amount' in income_df.columns else 0.0
+        total_expenses = float(expenses_df['amount'].sum()) if 'amount' in expenses_df.columns else 0.0
+        total_net = total_income - total_expenses
+
+        summary = {
+            "tax_year": year,
+            "total_income": total_income,
+            "total_expenses": total_expenses,
+            "total_net": total_net,
+            "property_count": len(property_breakdown_df),
+        }
+
         wb = Workbook()
-        ws = wb.active
-        ws.title = f"Property Report {year}"
+        ws_summary = wb.active
+        ws_summary.title = "Summary"
+        ws_income = wb.create_sheet("Income")
+        ws_expenses = wb.create_sheet("Expenses")
+        ws_properties = wb.create_sheet("Property Breakdown")
+        ws_pivot_summary = wb.create_sheet("Pivot Summary")
+        ws_expense_details = wb.create_sheet("Expense Details")
 
-        # Define styles
-        header_font = Font(name='Arial', size=14, bold=True)
-        title_font = Font(name='Arial', size=11, bold=True)
-        section_font = Font(name='Arial', size=10, bold=True)
+        header_font = Font(name='Calibri', size=12, bold=True, color='FFFFFF')
+        title_font = Font(name='Calibri', size=16, bold=True, color='1E40AF')
+        subtitle_font = Font(name='Calibri', size=11, color='334155')
         header_fill = PatternFill(start_color='2563EB', end_color='2563EB', fill_type='solid')
-        total_fill = PatternFill(start_color='E5E7EB', end_color='E5E7EB', fill_type='solid')
-        white_font = Font(name='Arial', size=10, bold=True, color='FFFFFF')
-        bold_font = Font(name='Arial', size=10, bold=True)
-        currency_format = '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'
-        date_format = 'mm/dd/yyyy'
+        summary_header_fill = PatternFill(start_color='10B981', end_color='10B981', fill_type='solid')
+        property_header_fill = PatternFill(start_color='8B5CF6', end_color='8B5CF6', fill_type='solid')
+        detail_header_fill = PatternFill(start_color='0EA5E9', end_color='0EA5E9', fill_type='solid')
+        pivot_header_fill = PatternFill(start_color='0284C7', end_color='0284C7', fill_type='solid')
+        alt_row_fill = PatternFill(start_color='F8FAFC', end_color='F8FAFC', fill_type='solid')
+        white_fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+        positive_fill = PatternFill(start_color='D1FAE5', end_color='D1FAE5', fill_type='solid')
+        negative_fill = PatternFill(start_color='FEE2E2', end_color='FEE2E2', fill_type='solid')
+
         thin_border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
+            left=Side(style='thin', color='CBD5E1'),
+            right=Side(style='thin', color='CBD5E1'),
+            top=Side(style='thin', color='CBD5E1'),
+            bottom=Side(style='thin', color='CBD5E1'),
         )
 
-        # Title
-        ws['A1'] = 'Lust Rentals'
-        ws['A1'].font = header_font
-        ws['A2'] = f'Property Income & Expense Report - {year}'
-        ws['A2'].font = Font(name='Arial', size=11)
+        # Summary sheet
+        ws_summary['A1'] = 'Yearly Income & Expense - Lust Rentals LLC'
+        ws_summary['A1'].font = title_font
+        ws_summary['A2'] = f'Tax Year: {year}'
+        ws_summary['A2'].font = subtitle_font
+        ws_summary.merge_cells('A1:B1')
 
-        row = 4
-
-        # Expenses by Property and Type Section
-        ws[f'A{row}'] = 'EXPENSES BY PROPERTY AND TYPE'
-        ws[f'A{row}'].font = title_font
-        ws.merge_cells(f'A{row}:C{row}')
-        row += 1
-
-        # Table headers for expenses
-        headers = ['Prop Name', 'Expense Type', 'Debit Amount (Sum)']
-        for col, header in enumerate(headers, start=1):
-            cell = ws.cell(row=row, column=col, value=header)
-            cell.font = white_font
-            cell.fill = header_fill
+        ws_summary['A4'] = 'Metric'
+        ws_summary['B4'] = 'Value'
+        for col in range(1, 3):
+            cell = ws_summary.cell(row=4, column=col)
+            cell.font = header_font
+            cell.fill = summary_header_fill
             cell.alignment = Alignment(horizontal='center', vertical='center')
             cell.border = thin_border
-        row += 1
 
-        # Property expense details
-        grand_total_expenses = 0
-        for prop in summary['properties']:
-            if not prop['expense_types']:
-                continue
+        amount_col_income = None
+        for idx, col in enumerate(income_df.columns, start=1):
+            if 'amount' in col.lower():
+                amount_col_income = idx
+                break
+        amount_col_expense = None
+        for idx, col in enumerate(expenses_df.columns, start=1):
+            if 'amount' in col.lower():
+                amount_col_expense = idx
+                break
 
-            # First expense type row includes property name
-            first_expense = prop['expense_types'][0]
-            ws.cell(row=row, column=1, value=prop['property'])
-            ws.cell(row=row, column=2, value=first_expense['type'])
-            ws.cell(row=row, column=3, value=first_expense['amount'])
+        income_amount_col = get_column_letter(amount_col_income) if amount_col_income else None
+        expense_amount_col = get_column_letter(amount_col_expense) if amount_col_expense else None
 
-            # Apply formatting
-            for col in range(1, 4):
-                cell = ws.cell(row=row, column=col)
+        summary_rows = [
+            ('Tax Year', year),
+            ('Total Income', f"=SUM(Income!{income_amount_col}:{income_amount_col})" if income_amount_col else total_income),
+            ('Total Expenses', f"=SUM(Expenses!{expense_amount_col}:{expense_amount_col})" if expense_amount_col else total_expenses),
+            ('Net Income', '=B6-B7'),
+            ('Income Transactions', '=MAX(COUNTA(Income!A:A)-1,0)'),
+            ('Expense Transactions', '=MAX(COUNTA(Expenses!A:A)-1,0)'),
+        ]
+
+        start_row = 5
+        for offset, (label, value) in enumerate(summary_rows):
+            row = start_row + offset
+            ws_summary.cell(row=row, column=1, value=label)
+            ws_summary.cell(row=row, column=2, value=value)
+
+            for col in range(1, 3):
+                cell = ws_summary.cell(row=row, column=col)
                 cell.border = thin_border
-                if col == 3:
-                    cell.number_format = currency_format
-            row += 1
+                cell.alignment = Alignment(horizontal='left' if col == 1 else 'right')
+                cell.fill = alt_row_fill if row % 2 == 0 else white_fill
+                if col == 1:
+                    cell.font = Font(name='Calibri', size=11, bold=True, color='1E293B')
+                else:
+                    cell.font = Font(name='Calibri', size=11, color='334155')
 
-            # Remaining expense types (property name blank)
-            for expense in prop['expense_types'][1:]:
-                ws.cell(row=row, column=1, value='')
-                ws.cell(row=row, column=2, value=expense['type'])
-                ws.cell(row=row, column=3, value=expense['amount'])
+        for row in [6, 7, 8]:
+            ws_summary.cell(row=row, column=2).number_format = '$#,##0.00'
 
-                for col in range(1, 4):
-                    cell = ws.cell(row=row, column=col)
+        ws_summary.conditional_formatting.add(
+            'B8',
+            CellIsRule(operator='greaterThanOrEqual', formula=['0'], fill=positive_fill)
+        )
+        ws_summary.conditional_formatting.add(
+            'B8',
+            CellIsRule(operator='lessThan', formula=['0'], fill=negative_fill)
+        )
+
+        ws_summary['A12'] = f"Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        ws_summary['A12'].font = Font(name='Calibri', size=9, italic=True, color='64748B')
+
+        # Income sheet
+        if not income_df.empty or len(income_df.columns) > 0:
+            for row in dataframe_to_rows(income_df, index=False, header=True):
+                ws_income.append(row)
+            if income_df.empty:
+                ws_income.append(["No income data available for this year."])
+        else:
+            ws_income.append(["No income data available for this year."])
+
+        # Expenses sheet
+        if not expenses_df.empty or len(expenses_df.columns) > 0:
+            for row in dataframe_to_rows(expenses_df, index=False, header=True):
+                ws_expenses.append(row)
+            if expenses_df.empty:
+                ws_expenses.append(["No expense data available for this year."])
+        else:
+            ws_expenses.append(["No expense data available for this year."])
+
+        # Property breakdown sheet
+        if not property_breakdown_df.empty:
+            ws_properties.append(["Property", "Income", "Expenses", "Net"])
+            for idx, row in property_breakdown_df.iterrows():
+                excel_row = ws_properties.max_row + 1
+                ws_properties.cell(row=excel_row, column=1, value=row["Property"])
+                ws_properties.cell(row=excel_row, column=2, value=row["Income"])
+                ws_properties.cell(row=excel_row, column=3, value=row["Expenses"])
+                ws_properties.cell(row=excel_row, column=4, value=f"=B{excel_row}-C{excel_row}")
+
+            total_row = ws_properties.max_row + 1
+            ws_properties.cell(row=total_row, column=1, value="TOTAL")
+            ws_properties.cell(row=total_row, column=2, value=f"=SUM(B2:B{total_row-1})")
+            ws_properties.cell(row=total_row, column=3, value=f"=SUM(C2:C{total_row-1})")
+            ws_properties.cell(row=total_row, column=4, value=f"=SUM(D2:D{total_row-1})")
+        else:
+            ws_properties.append(["No property breakdown available for this year."])
+
+        # Expense details sheet
+        expense_details = self._load_expense_details(year)
+        detail_headers = [
+            "Date",
+            "Debit Amount",
+            "Description",
+            "Reference",
+            "Memo",
+            "Vendor",
+            "Prop Code",
+            "Prop Name",
+            "Expense Type",
+        ]
+
+        if expense_details:
+            ws_expense_details.append(detail_headers)
+
+            property_groups: Dict[str, Dict[str, List[Dict]]] = {}
+            for entry in expense_details:
+                prop_name = entry["prop_name"]
+                expense_type = entry["expense_type"]
+                property_groups.setdefault(prop_name, {}).setdefault(expense_type, []).append(entry)
+
+            current_row = ws_expense_details.max_row + 1
+            grand_total = 0.0
+            grand_count = 0
+
+            for prop_name in sorted(property_groups.keys(), key=lambda x: x.lower()):
+                # Property header row
+                ws_expense_details.cell(row=current_row, column=8, value=prop_name)
+                for col_idx in range(1, len(detail_headers) + 1):
+                    cell = ws_expense_details.cell(row=current_row, column=col_idx)
+                    cell.font = Font(name='Calibri', size=11, bold=True)
+                    cell.fill = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
                     cell.border = thin_border
-                    if col == 3:
-                        cell.number_format = currency_format
-                row += 1
+                current_row += 1
 
-            # Property total row
-            ws.cell(row=row, column=1, value=f"{prop['property']} Total")
-            ws.cell(row=row, column=2, value='')
-            ws.cell(row=row, column=3, value=prop['expenses'])
+                for expense_type in sorted(property_groups[prop_name].keys()):
+                    entries = property_groups[prop_name][expense_type]
+                    subtotal = sum(e["debit_amount"] for e in entries)
+                    count = len(entries)
 
-            for col in range(1, 4):
-                cell = ws.cell(row=row, column=col)
-                cell.font = bold_font
-                cell.fill = total_fill
+                    subtotal_label = f"{expense_type} +{count} lines,{subtotal:,.2f}"
+                    subtotal_row = current_row
+                    ws_expense_details.cell(row=subtotal_row, column=9, value=subtotal_label)
+                    for col_idx in range(1, len(detail_headers) + 1):
+                        cell = ws_expense_details.cell(row=subtotal_row, column=col_idx)
+                        cell.font = Font(name='Calibri', size=10, bold=True)
+                        cell.border = thin_border
+                    current_row += 1
+
+                    detail_start = current_row
+                    for entry in entries:
+                        ws_expense_details.cell(row=current_row, column=1, value=entry["date"])
+                        ws_expense_details.cell(row=current_row, column=2, value=entry["debit_amount"])
+                        ws_expense_details.cell(row=current_row, column=3, value=entry["description"])
+                        ws_expense_details.cell(row=current_row, column=4, value=entry["reference"])
+                        ws_expense_details.cell(row=current_row, column=5, value=entry["memo"])
+                        ws_expense_details.cell(row=current_row, column=6, value=entry["vendor"])
+                        ws_expense_details.cell(row=current_row, column=7, value=entry["prop_code"])
+                        ws_expense_details.cell(row=current_row, column=8, value=entry["prop_name"])
+                        ws_expense_details.cell(row=current_row, column=9, value=entry["expense_type"])
+
+                        for col_idx in range(1, len(detail_headers) + 1):
+                            cell = ws_expense_details.cell(row=current_row, column=col_idx)
+                            cell.border = thin_border
+                            if col_idx == 1:
+                                cell.number_format = 'yyyy-mm-dd'
+                                cell.alignment = Alignment(horizontal='center', vertical='center')
+                            elif col_idx == 2:
+                                cell.number_format = '$#,##0.00'
+                                cell.alignment = Alignment(horizontal='right', vertical='center')
+                            else:
+                                cell.alignment = Alignment(horizontal='left', vertical='center')
+
+                        current_row += 1
+
+                    detail_end = current_row - 1
+                    if detail_end >= detail_start:
+                        ws_expense_details.row_dimensions.group(
+                            detail_start, detail_end, outline_level=2, hidden=False
+                        )
+                    ws_expense_details.row_dimensions.group(
+                        subtotal_row, subtotal_row, outline_level=1, hidden=False
+                    )
+
+                    grand_total += subtotal
+                    grand_count += count
+
+                current_row += 1
+
+            grand_label = f"GRAND TOTAL +{grand_count} lines,{grand_total:,.2f}"
+            ws_expense_details.cell(row=current_row, column=9, value=grand_label)
+            for col_idx in range(1, len(detail_headers) + 1):
+                cell = ws_expense_details.cell(row=current_row, column=col_idx)
+                cell.font = Font(name='Calibri', size=11, bold=True)
+                cell.fill = PatternFill(start_color='CBD5E1', end_color='CBD5E1', fill_type='solid')
                 cell.border = thin_border
-                if col == 3:
-                    cell.number_format = currency_format
-            row += 1
-            grand_total_expenses += prop['expenses']
+        else:
+            ws_expense_details.append(["No expense details available for this year."])
 
-        # Grand total for expenses
-        ws.cell(row=row, column=1, value='GRAND TOTAL')
-        ws.cell(row=row, column=2, value='')
-        ws.cell(row=row, column=3, value=grand_total_expenses)
-        for col in range(1, 4):
-            cell = ws.cell(row=row, column=col)
-            cell.font = Font(name='Arial', size=10, bold=True)
-            cell.fill = PatternFill(start_color='D1D5DB', end_color='D1D5DB', fill_type='solid')
-            cell.border = thin_border
-            if col == 3:
-                cell.number_format = currency_format
-        row += 2
+        # Pivot summary sheet
+        pivot_rows = self._load_expense_pivot_summary(year)
+        pivot_headers = ["Prop Name", "Expense Type", "Debit Amount (Sum)"]
 
-        # Income by Property and Date Section
-        ws[f'A{row}'] = 'INCOME BY PROPERTY AND DATE'
-        ws[f'A{row}'].font = title_font
-        ws.merge_cells(f'A{row}:C{row}')
-        row += 1
+        pivot_has_header = False
+        if pivot_rows:
+            ws_pivot_summary.append(pivot_headers)
+            pivot_has_header = True
 
-        # Table headers for income
-        headers = ['Prop Name', 'Deposit Date', 'Credit Amount']
-        for col, header in enumerate(headers, start=1):
-            cell = ws.cell(row=row, column=col, value=header)
-            cell.font = white_font
-            cell.fill = header_fill
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-            cell.border = thin_border
-        row += 1
+            grouped: Dict[str, List[Dict]] = {}
+            for row in pivot_rows:
+                grouped.setdefault(row["property_name"], []).append(row)
 
-        # Property income details
-        grand_total_income = 0
-        for prop in summary['properties']:
-            if not prop['income_entries']:
-                continue
+            current_row = ws_pivot_summary.max_row + 1
+            grand_total = 0.0
+            grand_count = 0
+            zebra_index = 0
 
-            # First income entry includes property name
-            first_income = prop['income_entries'][0]
-            ws.cell(row=row, column=1, value=prop['property'])
-            ws.cell(row=row, column=2, value=first_income['date'])
-            ws.cell(row=row, column=3, value=first_income['amount'])
+            for prop_name in sorted(grouped.keys(), key=lambda x: x.lower()):
+                prop_rows = sorted(grouped[prop_name], key=lambda x: x["expense_type"])
+                prop_total = sum(row["debit_amount"] for row in prop_rows)
+                prop_count = sum(row["line_count"] for row in prop_rows)
 
-            # Apply formatting
-            for col in range(1, 4):
-                cell = ws.cell(row=row, column=col)
-                cell.border = thin_border
-                if col == 2:
-                    cell.number_format = date_format
-                elif col == 3:
-                    cell.number_format = currency_format
-            row += 1
+                first_row = True
+                for row in prop_rows:
+                    ws_pivot_summary.cell(row=current_row, column=1, value=prop_name if first_row else "")
+                    ws_pivot_summary.cell(row=current_row, column=2, value=row["expense_type"])
+                    ws_pivot_summary.cell(row=current_row, column=3, value=row["debit_amount"])
 
-            # Remaining income entries (property name blank)
-            for income in prop['income_entries'][1:]:
-                ws.cell(row=row, column=1, value='')
-                ws.cell(row=row, column=2, value=income['date'])
-                ws.cell(row=row, column=3, value=income['amount'])
+                    row_fill = alt_row_fill if zebra_index % 2 == 0 else white_fill
+                    for col_idx in range(1, 4):
+                        cell = ws_pivot_summary.cell(row=current_row, column=col_idx)
+                        cell.border = thin_border
+                        cell.fill = row_fill
+                        if col_idx == 1 and first_row:
+                            cell.font = Font(name='Calibri', size=11, bold=True)
+                        else:
+                            cell.font = Font(name='Calibri', size=11)
+                        if col_idx == 3:
+                            cell.number_format = '$#,##0.00'
+                            cell.alignment = Alignment(horizontal='right', vertical='center')
+                        else:
+                            cell.alignment = Alignment(horizontal='left', vertical='center')
 
-                for col in range(1, 4):
-                    cell = ws.cell(row=row, column=col)
+                    current_row += 1
+                    zebra_index += 1
+                    first_row = False
+
+                subtotal_label = f"{prop_name} +{prop_count} lines,{prop_total:,.2f}"
+                ws_pivot_summary.cell(row=current_row, column=1, value=subtotal_label)
+                for col_idx in range(1, 4):
+                    cell = ws_pivot_summary.cell(row=current_row, column=col_idx)
+                    cell.font = Font(name='Calibri', size=11, bold=True)
                     cell.border = thin_border
-                    if col == 2:
-                        cell.number_format = date_format
-                    elif col == 3:
-                        cell.number_format = currency_format
-                row += 1
+                    cell.fill = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
+                current_row += 1
 
-            # Property total row
-            ws.cell(row=row, column=1, value=f"{prop['property']} Total")
-            ws.cell(row=row, column=2, value='')
-            ws.cell(row=row, column=3, value=prop['income'])
+                grand_total += prop_total
+                grand_count += prop_count
 
-            for col in range(1, 4):
-                cell = ws.cell(row=row, column=col)
-                cell.font = bold_font
-                cell.fill = total_fill
+            grand_label = f"GRAND TOTAL +{grand_count} lines,{grand_total:,.2f}"
+            ws_pivot_summary.cell(row=current_row, column=1, value=grand_label)
+            for col_idx in range(1, 4):
+                cell = ws_pivot_summary.cell(row=current_row, column=col_idx)
+                cell.font = Font(name='Calibri', size=11, bold=True)
                 cell.border = thin_border
-                if col == 3:
-                    cell.number_format = currency_format
-            row += 1
-            grand_total_income += prop['income']
+                cell.fill = PatternFill(start_color='CBD5E1', end_color='CBD5E1', fill_type='solid')
+        else:
+            ws_pivot_summary.append(["No pivot summary available for this year."])
 
-        # Grand total for income
-        ws.cell(row=row, column=1, value='GRAND TOTAL')
-        ws.cell(row=row, column=2, value='')
-        ws.cell(row=row, column=3, value=grand_total_income)
-        for col in range(1, 4):
-            cell = ws.cell(row=row, column=col)
-            cell.font = Font(name='Arial', size=10, bold=True)
-            cell.fill = PatternFill(start_color='D1D5DB', end_color='D1D5DB', fill_type='solid')
-            cell.border = thin_border
-            if col == 3:
-                cell.number_format = currency_format
-        row += 2
-
-        # ========== NEW SECTION: Expenses by Property, Date and Type ==========
-        ws[f'A{row}'] = 'EXPENSES BY PROPERTY, DATE AND TYPE'
-        ws[f'A{row}'].font = title_font
-        row += 1
-
-        # Table header for expense entries
-        headers = ['Prop Name', 'Expense Date', 'Expense Type', 'Debit Amount']
-        for col, header in enumerate(headers, start=1):
-            cell = ws.cell(row=row, column=col, value=header)
-            cell.font = Font(name='Arial', size=10, bold=True, color='FFFFFF')
-            cell.fill = PatternFill(start_color='2563EB', end_color='2563EB', fill_type='solid')
-            cell.border = thin_border
-            cell.alignment = Alignment(horizontal='center' if col < 4 else 'right')
-        row += 1
-
-        # Property expense entry details
-        grand_total_expenses_detailed = 0
-        for prop in summary['properties']:
-            if not prop['expense_entries']:
+        # Style income and expense sheets
+        for ws in (ws_income, ws_expenses):
+            if ws.max_row < 2:
                 continue
-
-            # First expense entry row includes property name
-            first_expense = prop['expense_entries'][0]
-            date_str = safe_format_date(first_expense['date'])
-
-            ws.cell(row=row, column=1, value=prop['property'][:25])
-            ws.cell(row=row, column=2, value=date_str)
-            ws.cell(row=row, column=3, value=first_expense['type'][:25])
-            ws.cell(row=row, column=4, value=first_expense['amount'])
-
-            for col in range(1, 5):
-                cell = ws.cell(row=row, column=col)
+            for col_idx in range(1, ws.max_column + 1):
+                cell = ws.cell(row=1, column=col_idx)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
                 cell.border = thin_border
-                cell.font = Font(name='Arial', size=9)
-                if col == 4:
-                    cell.number_format = currency_format
-                    cell.alignment = Alignment(horizontal='right')
-            row += 1
 
-            # Remaining expense entries (property name blank)
-            for expense in prop['expense_entries'][1:]:
-                date_str = safe_format_date(expense['date'])
-
-                ws.cell(row=row, column=1, value='')
-                ws.cell(row=row, column=2, value=date_str)
-                ws.cell(row=row, column=3, value=expense['type'][:25])
-                ws.cell(row=row, column=4, value=expense['amount'])
-
-                for col in range(1, 5):
-                    cell = ws.cell(row=row, column=col)
+            for row_idx in range(2, ws.max_row + 1):
+                row_fill = alt_row_fill if row_idx % 2 == 0 else white_fill
+                for col_idx in range(1, ws.max_column + 1):
+                    cell = ws.cell(row=row_idx, column=col_idx)
                     cell.border = thin_border
-                    cell.font = Font(name='Arial', size=9)
-                    if col == 4:
-                        cell.number_format = currency_format
-                        cell.alignment = Alignment(horizontal='right')
-                row += 1
+                    cell.fill = row_fill
+                    column_name = str(ws.cell(row=1, column=col_idx).value or "").lower()
+                    if 'amount' in column_name:
+                        cell.number_format = '$#,##0.00'
+                        cell.alignment = Alignment(horizontal='right', vertical='center')
+                    elif 'date' in column_name:
+                        cell.number_format = 'yyyy-mm-dd'
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
+                    else:
+                        cell.alignment = Alignment(horizontal='left', vertical='center')
 
-            # Property total row
-            ws.cell(row=row, column=1, value=f"{prop['property'][:20]} Total")
-            ws.cell(row=row, column=2, value='')
-            ws.cell(row=row, column=3, value='')
-            ws.cell(row=row, column=4, value=prop['expenses'])
-
-            for col in range(1, 5):
-                cell = ws.cell(row=row, column=col)
-                cell.font = Font(name='Arial', size=9, bold=True)
-                cell.fill = PatternFill(start_color='E5E7EB', end_color='E5E7EB', fill_type='solid')
+        # Style property breakdown sheet
+        if ws_properties.max_row >= 2 and ws_properties.max_column >= 4:
+            for col_idx in range(1, ws_properties.max_column + 1):
+                cell = ws_properties.cell(row=1, column=col_idx)
+                cell.font = header_font
+                cell.fill = property_header_fill
+                cell.alignment = Alignment(horizontal='center', vertical='center')
                 cell.border = thin_border
-                if col == 4:
-                    cell.number_format = currency_format
-                    cell.alignment = Alignment(horizontal='right')
-            row += 1
-            grand_total_expenses_detailed += prop['expenses']
 
-        # Grand total for expenses
-        ws.cell(row=row, column=1, value='GRAND TOTAL')
-        ws.cell(row=row, column=2, value='')
-        ws.cell(row=row, column=3, value='')
-        ws.cell(row=row, column=4, value=grand_total_expenses_detailed)
+            for row_idx in range(2, ws_properties.max_row + 1):
+                row_fill = alt_row_fill if row_idx % 2 == 0 else white_fill
+                for col_idx in range(1, ws_properties.max_column + 1):
+                    cell = ws_properties.cell(row=row_idx, column=col_idx)
+                    cell.border = thin_border
+                    cell.fill = row_fill
+                    if col_idx in (2, 3, 4):
+                        cell.number_format = '$#,##0.00'
+                        cell.alignment = Alignment(horizontal='right', vertical='center')
+                    else:
+                        cell.alignment = Alignment(horizontal='left', vertical='center')
 
-        for col in range(1, 5):
-            cell = ws.cell(row=row, column=col)
-            cell.font = Font(name='Arial', size=10, bold=True)
-            cell.fill = PatternFill(start_color='D1D5DB', end_color='D1D5DB', fill_type='solid')
-            cell.border = thin_border
-            if col == 4:
-                cell.number_format = currency_format
-                cell.alignment = Alignment(horizontal='right')
-        row += 2
+            total_row = ws_properties.max_row
+            for col_idx in range(1, ws_properties.max_column + 1):
+                cell = ws_properties.cell(row=total_row, column=col_idx)
+                cell.font = Font(name='Calibri', size=11, bold=True)
+                cell.fill = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
 
-        # Overall Summary section
-        ws[f'A{row}'] = 'OVERALL SUMMARY'
-        ws[f'A{row}'].font = title_font
-        row += 1
+        # Style expense details sheet
+        if ws_expense_details.max_row >= 1 and ws_expense_details.max_column >= 1:
+            header_row = 1
+            for col_idx in range(1, ws_expense_details.max_column + 1):
+                cell = ws_expense_details.cell(row=header_row, column=col_idx)
+                cell.font = header_font
+                cell.fill = detail_header_fill
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                cell.border = thin_border
 
-        ws[f'A{row}'] = 'Total Income'
-        ws[f'B{row}'] = summary['total_income']
-        ws[f'B{row}'].number_format = currency_format
-        ws[f'B{row}'].font = bold_font
-        row += 1
+            ws_expense_details.freeze_panes = 'A2'
+            ws_expense_details.sheet_properties.outlinePr.summaryBelow = True
 
-        ws[f'A{row}'] = 'Total Expenses'
-        ws[f'B{row}'] = summary['total_expenses']
-        ws[f'B{row}'].number_format = currency_format
-        ws[f'B{row}'].font = bold_font
-        row += 1
+        # Style pivot summary sheet
+        if pivot_has_header and ws_pivot_summary.max_row >= 1 and ws_pivot_summary.max_column >= 1:
+            header_row = 1
+            for col_idx in range(1, ws_pivot_summary.max_column + 1):
+                cell = ws_pivot_summary.cell(row=header_row, column=col_idx)
+                cell.font = header_font
+                cell.fill = pivot_header_fill
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                cell.border = thin_border
 
-        ws[f'A{row}'] = 'Net Income'
-        ws[f'B{row}'] = summary['total_net']
-        ws[f'B{row}'].number_format = currency_format
-        ws[f'B{row}'].font = Font(name='Arial', size=10, bold=True, color='10B981' if summary['total_net'] >= 0 else 'EF4444')
+            ws_pivot_summary.freeze_panes = 'A2'
 
-        # Column widths
-        ws.column_dimensions['A'].width = 30
-        ws.column_dimensions['B'].width = 20
-        ws.column_dimensions['C'].width = 20
+        # Chart
+        if ws_properties.max_row >= 3 and ws_properties.max_column >= 3:
+            chart = BarChart()
+            chart.title = "Income vs Expenses by Property"
+            chart.y_axis.title = "Amount"
+            data = Reference(ws_properties, min_col=2, max_col=3, min_row=1, max_row=ws_properties.max_row - 1)
+            categories = Reference(ws_properties, min_col=1, min_row=2, max_row=ws_properties.max_row - 1)
+            chart.add_data(data, titles_from_data=True)
+            chart.set_categories(categories)
+            chart.height = 8
+            chart.width = 16
+            ws_summary.add_chart(chart, "D4")
 
-        # Footer
-        row += 2
-        ws[f'A{row}'] = f'Report generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
-        ws[f'A{row}'].font = Font(name='Arial', size=8, italic=True)
+        for ws in (ws_summary, ws_income, ws_expenses, ws_properties, ws_pivot_summary, ws_expense_details):
+            for column in ws.columns:
+                max_length = 0
+                column_letter = None
+                for cell in column:
+                    if hasattr(cell, 'column_letter'):
+                        column_letter = cell.column_letter
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                if column_letter:
+                    ws.column_dimensions[column_letter].width = min(max(max_length + 3, 12), 50)
 
-        # Save file
+            if ws.title in ("Income", "Expenses", "Property Breakdown", "Pivot Summary", "Expense Details"):
+                ws.freeze_panes = 'A2'
+
         file_path = None
         if save_to_file:
-            file_path = os.path.join(self.reports_dir, f'property_report_{year}.xlsx')
+            file_path = os.path.join(self.reports_dir, 'Yearly Income & Expense Lust Rentals LLC.xlsx')
             wb.save(file_path)
             logger.info(f"Property Excel report saved to: {file_path}")
 
