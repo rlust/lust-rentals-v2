@@ -20,6 +20,7 @@ from slowapi.errors import RateLimitExceeded
 
 from src.api.dependencies import get_config, CONFIG
 from src.api.routes import processing, reports, exports, review, properties, backup, rules
+from src.dashboard import routes as dashboard_routes
 from src.utils.config import configure_logging
 
 # Initialize FastAPI app
@@ -57,6 +58,9 @@ app.include_router(rules.router, prefix="/rules", tags=["Automation Rules"])
 
 # Backup and export routes handle: /backup/* (backup, export, restore)
 app.include_router(backup.router, prefix="/backup", tags=["Backup & Export"])
+
+# Dashboard routes handle: /api/dashboard/*, /api/property/*
+app.include_router(dashboard_routes.router, tags=["Dashboard & Analytics"])
 
 # NOTE: The following routers still need to be extracted from the old server.py:
 # - Review routes (/review/*) - ~12 endpoints

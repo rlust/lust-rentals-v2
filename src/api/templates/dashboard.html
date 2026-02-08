@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lust Rentals - Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>Lust Rentals Financial Dashboard</h1>
+                <div class="year-selector">
+                    <label for="yearSelect">Year:</label>
+                    <select id="yearSelect">
+                        <option value="2024">2024</option>
+                        <option value="2025" selected>2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Summary Cards -->
+            <section class="summary-section">
+                <h2>Financial Summary</h2>
+                <div class="cards-grid">
+                    <div class="card income-card">
+                        <h3>Total Income</h3>
+                        <p class="amount" id="totalIncome">-</p>
+                    </div>
+                    <div class="card expense-card">
+                        <h3>Total Expenses</h3>
+                        <p class="amount" id="totalExpenses">-</p>
+                    </div>
+                    <div class="card net-card">
+                        <h3>Net Income</h3>
+                        <p class="amount" id="netIncome">-</p>
+                    </div>
+                    <div class="card ratio-card">
+                        <h3>Expense Ratio</h3>
+                        <p class="amount" id="expenseRatio">-</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Two-Column Layout -->
+            <div class="content-grid">
+                <!-- Left Column -->
+                <div class="left-column">
+                    <!-- Properties Comparison -->
+                    <section class="chart-section">
+                        <h2>Properties Comparison</h2>
+                        <div class="table-wrapper">
+                            <table id="propertiesTable" class="comparison-table">
+                                <thead>
+                                    <tr>
+                                        <th>Property</th>
+                                        <th class="number">Income</th>
+                                        <th class="number">Expenses</th>
+                                        <th class="number">Net</th>
+                                        <th class="number">Ratio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="loading">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right Column -->
+                <div class="right-column">
+                    <!-- Expense Pie Chart -->
+                    <section class="chart-section">
+                        <h2>Expense Breakdown</h2>
+                        <div class="chart-container">
+                             <canvas id="expenseChart"></canvas>
+                        </div>
+                        <div id="categoryList" class="category-list"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Property Details Section -->
+            <section class="property-details-section">
+                <h2>Property Details</h2>
+                <div class="property-selector">
+                    <label for="propertySelect">Select Property:</label>
+                    <select id="propertySelect">
+                        <option value="">-- Select a property --</option>
+                    </select>
+                </div>
+                
+                <div id="propertyDetails" class="property-details" style="display: none;">
+                    <div class="property-summary">
+                        <h3 id="propertyName">-</h3>
+                        <div class="property-metrics">
+                            <div class="metric">
+                                <span class="label">Income:</span>
+                                <span class="value" id="propIncome">-</span>
+                            </div>
+                            <div class="metric">
+                                <span class="label">Expenses:</span>
+                                <span class="value" id="propExpenses">-</span>
+                            </div>
+                            <div class="metric">
+                                <span class="label">Net:</span>
+                                <span class="value" id="propNet">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expense Categories for Property -->
+                    <div class="expense-categories">
+                        <h4>Expense Categories</h4>
+                        <div class="chart-container-small">
+                            <canvas id="propertyExpenseChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Property Transactions -->
+                    <div class="transactions-section">
+                        <div class="transaction-group">
+                            <h4>Income Transactions</h4>
+                            <div class="table-scroll">
+                                <table class="transactions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th class="number">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="incomeTransactions">
+                                        <tr>
+                                            <td colspan="3" class="empty">No transactions</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="transaction-group">
+                            <h4>Expense Transactions</h4>
+                            <div class="table-scroll">
+                                <table class="transactions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Category</th>
+                                            <th class="number">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="expenseTransactions">
+                                        <tr>
+                                            <td colspan="4" class="empty">No transactions</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

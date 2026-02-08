@@ -10,6 +10,7 @@ import typer
 from src.data_processing.processor import FinancialDataProcessor
 from src.reporting.tax_reports import TaxReporter
 from src.reporting.property_reports import PropertyReportGenerator
+from src.reporting.comprehensive_reports import ComprehensiveReportGenerator
 from src.utils.config import configure_logging, load_config
 
 app = typer.Typer(help="Operational commands for Lust Rentals tax reporting workflows.")
@@ -137,6 +138,52 @@ def generate_property_excel(
         typer.echo(f"\n✓ Excel report saved to: {file_path}")
 
     typer.echo(f"{'='*60}\n")
+
+
+@app.command()
+def report(
+    year: Optional[int] = typer.Option(
+        None,
+        "--year",
+        help="Tax year to report (defaults to prior calendar year).",
+    ),
+    phase: int = typer.Option(
+        1,
+        "--phase",
+        help="Report phase: 1 for Excel reports, 2 for web dashboard data.",
+    ),
+) -> None:
+    """Generate comprehensive Phase 1 (Excel) or Phase 2 (Dashboard) reports."""
+    
+    target_year = year or (datetime.now().year - 1)
+    
+    if phase == 1:
+        generator = ComprehensiveReportGenerator()
+        output_file = generator.generate_phase1_excel(target_year)
+        
+        typer.echo(f"\n{'='*60}")
+        typer.echo(f"PHASE 1: Comprehensive Excel Report - {target_year}")
+        typer.echo(f"{'='*60}")
+        typer.echo(f"✓ Report generated with sheets:")
+        typer.echo(f"  • LLC Summary (consolidated)")
+        typer.echo(f"  • Expense Matrix (all properties × categories)")
+        typer.echo(f"  • Per-property detailed sheets")
+        typer.echo(f"\n✓ Report saved to: {output_file}")
+        typer.echo(f"{'='*60}\n")
+    elif phase == 2:
+        typer.echo(f"\n{'='*60}")
+        typer.echo(f"PHASE 2: Web Dashboard - {target_year}")
+        typer.echo(f"{'='*60}")
+        typer.echo(f"Dashboard is available at: http://localhost:8000/dashboard")
+        typer.echo(f"API endpoints:")
+        typer.echo(f"  • GET /api/dashboard/summary/{target_year}")
+        typer.echo(f"  • GET /api/dashboard/properties/{target_year}")
+        typer.echo(f"  • GET /api/dashboard/expenses/{target_year}")
+        typer.echo(f"  • GET /api/property/<name>/{target_year}")
+        typer.echo(f"{'='*60}\n")
+    else:
+        typer.echo(f"Invalid phase: {phase}. Use --phase 1 or --phase 2", err=True)
+        raise typer.Exit(1)
 
 
 def main() -> None:

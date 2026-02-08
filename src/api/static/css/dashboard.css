@@ -1,0 +1,462 @@
+/* Lust Rentals Dashboard Styles */
+
+:root {
+    --primary-color: #2F5496;
+    --secondary-color: #5B9BD5;
+    --success-color: #70AD47;
+    --warning-color: #FFC000;
+    --danger-color: #C00000;
+    --light-gray: #F2F2F2;
+    --medium-gray: #D9D9D9;
+    --dark-gray: #595959;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    padding: 24px 0;
+    box-shadow: var(--shadow);
+    margin-bottom: 32px;
+}
+
+.header-content {
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.year-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.year-selector label {
+    font-weight: 500;
+}
+
+.year-selector select {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 100px;
+}
+
+.year-selector select option {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Main Content */
+.main-content {
+    padding: 0 24px 40px;
+}
+
+/* Summary Section */
+.summary-section {
+    margin-bottom: 40px;
+}
+
+.summary-section h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: var(--primary-color);
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card h3 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card .amount {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.income-card .amount {
+    color: var(--success-color);
+}
+
+.expense-card .amount {
+    color: var(--danger-color);
+}
+
+.net-card .amount {
+    color: var(--primary-color);
+}
+
+.ratio-card .amount {
+    color: var(--secondary-color);
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.left-column,
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Sections */
+.chart-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.chart-section h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+/* Tables */
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.comparison-table thead {
+    background-color: var(--light-gray);
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.comparison-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.comparison-table th.number {
+    text-align: right;
+    padding-right: 16px;
+}
+
+.comparison-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.comparison-table td.number {
+    text-align: right;
+    padding-right: 16px;
+    font-family: 'Courier New', monospace;
+}
+
+.comparison-table tbody tr:hover {
+    background-color: #fafafa;
+    cursor: pointer;
+}
+
+.comparison-table .loading,
+.comparison-table .empty {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+/* Category List */
+.category-list {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.category-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+}
+
+.category-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.chart-container {
+    height: 300px;
+    position: relative;
+}
+
+/* Property Details Section */
+.property-details-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.property-details-section h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: var(--primary-color);
+}
+
+.property-selector {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.property-selector label {
+    font-weight: 500;
+}
+
+.property-selector select {
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    flex: 1;
+    max-width: 300px;
+}
+
+/* Property Details */
+.property-details {
+    border-top: 2px solid var(--light-gray);
+    padding-top: 24px;
+}
+
+.property-summary {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.property-summary h3 {
+    font-size: 20px;
+    color: var(--primary-color);
+    margin-bottom: 16px;
+}
+
+.property-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
+.metric .label {
+    font-weight: 500;
+    color: #666;
+}
+
+.metric .value {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-family: 'Courier New', monospace;
+}
+
+/* Expense Categories */
+.expense-categories {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.expense-categories h4 {
+    font-size: 14px;
+    margin-bottom: 16px;
+    color: var(--primary-color);
+}
+
+.chart-container-small {
+    height: 250px;
+    position: relative;
+}
+
+/* Transactions Section */
+.transactions-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 768px) {
+    .transactions-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+.transaction-group h4 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--primary-color);
+}
+
+.table-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.transactions-table thead {
+    background-color: var(--light-gray);
+    position: sticky;
+    top: 0;
+}
+
+.transactions-table th {
+    padding: 8px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.transactions-table th.number {
+    text-align: right;
+}
+
+.transactions-table td {
+    padding: 8px;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.transactions-table td.number {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+}
+
+.transactions-table .empty {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 16px;
+}
+
+/* Utility Classes */
+.loading {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+}
+
+.error {
+    background-color: #fde7e9;
+    color: var(--danger-color);
+    padding: 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .header h1 {
+        font-size: 24px;
+    }
+
+    .cards-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .main-content {
+        padding: 0 16px 32px;
+    }
+
+    .category-list {
+        grid-template-columns: 1fr;
+    }
+}
