@@ -62,6 +62,16 @@ class ExpenseUpdateRequest(BaseModel):
     amount: float
     category: str
     property_name: Optional[str] = None
+
+
+class CreateExpenseRequest(BaseModel):
+    """Request to create a new expense transaction."""
+    date: str
+    description: str
+    amount: float
+    category: str
+    property_name: str
+    memo: Optional[str] = None
     memo: Optional[str] = None
 
 
@@ -914,4 +924,72 @@ def update_income(
 
     except sqlite3.Error as e:
         logger.error(f"Error updating income {transaction_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+@router.post("/expenses/create")
+def create_new_expense(
+    request: CreateExpenseRequest,
+    http_request: Request
+) -> dict:
+    """Create a brand new expense transaction."""
+    import uuid
+    from datetime import datetime
+    
+    db_path = get_config().data_dir / "processed" / "processed.db"
+    review_manager = get_review_manager()
+    
+    # Validate required fields
+    if not request.date or not request.description or not request.category or not request.property_name:
+        raise HTTPException(status_code=400, detail="date, description, category, and property_name are required")
+    
+    try:
+        # Generate unique transaction ID
+        transaction_id = f"manual_{uuid.uuid4().hex[:16]}"
+        
+        # Insert into processed_expenses table
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO processed_expenses (
+                    transaction_id, date, description, amount, memo,
+                    category, property_name, confidence, match_reason,
+                    created_at, updated_at, modified_by, category_status,
+                    account_number, account_name, credit_amount, debit_amount,
+                    code, reference, transaction_type
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                transaction_id,
+                request.date,
+                request.description,
+                request.amount,
+                request.memo or '',
+                request.category.lower(),  # Normalize to lowercase
+                request.property_name,
+                0.95,  # High confidence for manual entry
+                'manual_entry',
+                datetime.now().isoformat(),
+                datetime.now().isoformat(),
+                'web_user',
+                'review',
+                None,  # account_number
+                None,  # account_name
+                None,  # credit_amount
+                abs(request.amount) if request.amount < 0 else None,  # debit_amount
+                None,  # code
+                None,  # reference
+                'expense'  # transaction_type
+            ))
+            conn.commit()
+        
+        logger.info(f"Created new expense transaction: {transaction_id}")
+        return {
+            "status": "success",
+            "transaction_id": transaction_id,
+            "message": f"New {request.category} expense created for {request.property_name}"
+        }
+    
+    except sqlite3.Error as e:
+        logger.error(f"Error creating expense: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
