@@ -494,6 +494,7 @@ def get_available_categories(http_request: Request) -> list:
     """
     return [
         "advertising",
+        "city_income_tax",
         "cleaning",
         "hoa",
         "insurance",
@@ -503,8 +504,10 @@ def get_available_categories(http_request: Request) -> list:
         "management_fees",
         "mortgage_interest",
         "pest_control",
+        "property_tax",
         "repairs",
         "supplies",
+        "tax_preparation",
         "taxes",
         "travel",
         "utilities",

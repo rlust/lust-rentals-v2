@@ -53,9 +53,24 @@ CATEGORY_NORMALIZATION: Dict[str, str] = {
     "TAXES": "taxes",
     "TAX": "taxes",
     "Taxes": "taxes",
-    "property_tax": "taxes",
-    "PROPERTY TAX": "taxes",
-    "Property Tax": "taxes",
+    
+    # Property Tax
+    "property_tax": "property_tax",
+    "PROPERTY TAX": "property_tax",
+    "Property Tax": "property_tax",
+    "real_estate_tax": "property_tax",
+    
+    # City/Local Income Tax
+    "city_income_tax": "city_income_tax",
+    "city_tax": "city_income_tax",
+    "local_tax": "city_income_tax",
+    "RITA": "city_income_tax",
+    
+    # Tax Preparation
+    "tax_preparation": "tax_preparation",
+    "tax_prep": "tax_preparation",
+    "accounting": "tax_preparation",
+    "cpa": "tax_preparation",
 
     # HOA/Condo fee variations
     "hoa": "hoa",
@@ -138,7 +153,10 @@ CATEGORY_DISPLAY_NAMES: Dict[str, str] = {
     "mortgage_interest": "Mortgage Interest",
     "insurance": "Insurance",
     "utilities": "Utilities",
-    "taxes": "Taxes",
+    "taxes": "Taxes (General)",
+    "property_tax": "Property Tax",
+    "city_income_tax": "City Income Tax",
+    "tax_preparation": "Tax Preparation",
     "hoa": "HOA/Condo Fee",
     "cleaning": "Cleaning",
     "landscaping": "Landscaping",

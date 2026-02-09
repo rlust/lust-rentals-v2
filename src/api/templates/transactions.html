@@ -786,9 +786,9 @@
 
             const isEdit = document.getElementById('edit_mode').value === 'true';
             const transactionId = document.getElementById('transaction_id').value;
-
-            const data = {
-                transaction_id: isEdit ? transactionId : `manual_${Date.now()}`,
+            
+            // Basic payload structure
+            const payload = {
                 date: document.getElementById('date').value,
                 description: document.getElementById('description').value,
                 amount: parseFloat(document.getElementById('amount').value),
@@ -796,29 +796,52 @@
                 memo: document.getElementById('memo').value || null
             };
 
+            // Validation
             if (currentTab === 'expenses') {
-                data.category = document.getElementById('category').value;
-                if (!data.category) {
+                payload.category = document.getElementById('category').value;
+                if (!payload.category) {
                     showToast('Please select a category', 'error');
                     return;
                 }
             } else {
-                if (!data.property_name) {
+                if (!payload.property_name) {
                     showToast('Please select a property for income', 'error');
                     return;
                 }
             }
 
             try {
-                // Use PUT endpoints for updates
-                const endpoint = currentTab === 'expenses'
-                    ? `/review/expense/${data.transaction_id}`
-                    : `/review/income/${data.transaction_id}`;
+                let endpoint, method;
+
+                if (currentTab === 'expenses') {
+                    if (isEdit) {
+                        // Update existing expense
+                        endpoint = `/review/expense/${transactionId}`;
+                        method = 'PUT';
+                        payload.transaction_id = transactionId;
+                    } else {
+                        // Create new expense
+                        endpoint = `/review/create-expense`;
+                        method = 'POST';
+                        // No transaction_id needed for create
+                    }
+                } else {
+                    // Income logic (currently only supports update/PUT in this UI version)
+                    if (!isEdit) {
+                        showToast('Creating new income transactions is not yet supported.', 'warning');
+                        return;
+                    }
+                    endpoint = `/review/income/${transactionId}`;
+                    method = 'PUT';
+                    payload.transaction_id = transactionId;
+                }
+
+                console.log(`Sending ${method} request to ${endpoint}`, payload);
 
                 const response = await fetch(`${API_BASE}${endpoint}`, {
-                    method: 'PUT',
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
@@ -827,9 +850,11 @@
                     await loadTransactions();
                 } else {
                     const error = await response.json();
+                    console.error('Server error:', error);
                     showToast(`✕ Error: ${error.detail || 'Failed to save'}`, 'error');
                 }
             } catch (error) {
+                console.error('Network error:', error);
                 showToast(`✕ Error: ${error.message}`, 'error');
             }
         }
