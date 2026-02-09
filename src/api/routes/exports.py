@@ -132,7 +132,7 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
         expenses_df['category_normalized'] = expenses_df['category'].apply(normalize_category)
         expenses_df['category_display'] = expenses_df['category_normalized'].apply(get_display_name)
 
-    # Calculate expenses by category
+    # Calculate expenses by category (ROLLUP SHEET)
     expense_by_category = []
     if not expenses_df.empty and 'category_normalized' in expenses_df.columns:
         category_summary = expenses_df.groupby(['category_normalized', 'category_display']).agg({
@@ -142,11 +142,15 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
         category_summary = category_summary.sort_values('Total', ascending=False)
 
         for (category_norm, category_display), row in category_summary.iterrows():
-            expense_by_category.append({
-                'Category': category_display,
-                'Total': abs(row['Total']),
-                'Transaction Count': int(row['Count'])
-            })
+            if category_display and str(category_display).strip():  # Skip empty categories
+                expense_by_category.append({
+                    'Category': category_display,
+                    'Total': abs(row['Total']),
+                    'Transaction Count': int(row['Count'])
+                })
+        
+        # Note: Rollup sheet only shows categories that have data (this is correct for a rollup)
+        # but Property Expense Breakdown sheet shows ALL categories for EACH property (fixed above)
 
     expense_by_category_df = pd.DataFrame(expense_by_category) if expense_by_category else pd.DataFrame()
 
@@ -234,10 +238,15 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
     # Create detailed property expense breakdown by category
     property_expense_breakdown_data = []
     if not expenses_df.empty and 'property_name' in expenses_df.columns and 'category_display' in expenses_df.columns:
-        # Get all unique properties
-        properties = expenses_df['property_name'].dropna().unique()
+        # Get all unique properties and categories
+        properties = sorted(expenses_df['property_name'].dropna().unique())
+        all_categories = sorted(expenses_df['category_display'].dropna().unique())
+        
+        # If no categories found, try normalized categories
+        if not all_categories:
+            all_categories = sorted(expenses_df['category_normalized'].dropna().unique())
 
-        for prop in sorted(properties):
+        for prop in properties:
             if not prop or str(prop).strip() == '':
                 continue
 
@@ -247,16 +256,26 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
                 'amount': ['sum', 'count']
             }).round(2)
             category_breakdown.columns = ['Total', 'Count']
-            category_breakdown = category_breakdown.sort_values('Total', ascending=False)
-
-            # Add each category as a row
-            for category, row in category_breakdown.iterrows():
-                property_expense_breakdown_data.append({
-                    'Property': prop,
-                    'Category': category,
-                    'Amount': abs(row['Total']),
-                    'Transaction Count': int(row['Count'])
-                })
+            
+            # ADD ALL CATEGORIES (even if $0.00)
+            for category in all_categories:
+                if category and str(category).strip():
+                    if category in category_breakdown.index:
+                        row = category_breakdown.loc[category]
+                        property_expense_breakdown_data.append({
+                            'Property': prop,
+                            'Category': category,
+                            'Amount': abs(row['Total']),
+                            'Transaction Count': int(row['Count'])
+                        })
+                    else:
+                        # Add zero-amount category for this property
+                        property_expense_breakdown_data.append({
+                            'Property': prop,
+                            'Category': category,
+                            'Amount': 0.00,
+                            'Transaction Count': 0
+                        })
 
     property_expense_breakdown_df = pd.DataFrame(property_expense_breakdown_data) if property_expense_breakdown_data else pd.DataFrame()
 
