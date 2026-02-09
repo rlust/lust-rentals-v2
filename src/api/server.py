@@ -19,7 +19,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from src.api.dependencies import get_config, CONFIG
-from src.api.routes import processing, reports, exports, review, properties, backup, rules
+from src.api.routes import processing, reports, exports, review, properties, backup, rules, dashboard
 # from src.dashboard import routes as dashboard_routes  # TODO: Refactor dashboard to FastAPI router
 from src.utils.config import configure_logging
 
@@ -59,9 +59,8 @@ app.include_router(rules.router, prefix="/rules", tags=["Automation Rules"])
 # Backup and export routes handle: /backup/* (backup, export, restore)
 app.include_router(backup.router, prefix="/backup", tags=["Backup & Export"])
 
-# Dashboard routes handle: /api/dashboard/*, /api/property/*
-# TODO: Refactor dashboard routes from Flask Blueprint to FastAPI router
-# app.include_router(dashboard_routes.router, tags=["Dashboard & Analytics"])
+# Dashboard routes handle: /dashboard, /api/dashboard/*
+app.include_router(dashboard.router, tags=["Dashboard & Analytics"])
 
 # NOTE: The following routers still need to be extracted from the old server.py:
 # - Review routes (/review/*) - ~12 endpoints
