@@ -193,8 +193,48 @@ def dashboard_page(year: Optional[int] = None) -> HTMLResponse:
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding-top: 0;
             color: #333;
+        }}
+        
+        nav {{
+            background: #1a1a2e;
+            color: white;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            height: 60px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }}
+        
+        nav .logo {{
+            font-weight: 700;
+            font-size: 18px;
+            color: #667eea;
+        }}
+        
+        nav a {{
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            font-size: 14px;
+        }}
+        
+        nav a:hover {{
+            background: rgba(102, 126, 234, 0.2);
+        }}
+        
+        nav a.active {{
+            background: #667eea;
+            color: white;
+        }}
+        
+        .main-content {{
+            padding: 20px;
         }}
         
         .container {{
@@ -522,6 +562,21 @@ def dashboard_page(year: Optional[int] = None) -> HTMLResponse:
     </style>
 </head>
 <body>
+    <nav>
+        <div class="logo">🏠 Lust Rentals</div>
+        <a href="/" class="active">Dashboard</a>
+        <a href="/">Review Enhanced</a>
+        <a href="/">Classic Review</a>
+        <a href="/">Properties</a>
+        <a href="/">Rules</a>
+        <a href="/">Transactions</a>
+        <a href="/">Reports</a>
+        <a href="/">Backups</a>
+        <a href="/">Docs</a>
+        <a href="/" style="margin-left: auto;">Dark Mode</a>
+    </nav>
+    
+    <div class="main-content">
     <div class="container">
         <div class="header">
             <h1>🏠 Lust Rentals Dashboard</h1>
@@ -849,6 +904,7 @@ def dashboard_page(year: Optional[int] = None) -> HTMLResponse:
             loadExpensesChart();
         }});
     </script>
+    </div>
 </body>
 </html>
     """
