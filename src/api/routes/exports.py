@@ -526,16 +526,20 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
                     else:
                         cell.alignment = cell_alignment
 
-        # Write property expense breakdown sheet
+        # Write property expense breakdown sheet - SIMPLIFIED 3-COLUMN FORMAT
         if not property_expense_breakdown_df.empty:
-            property_expense_breakdown_df.to_excel(writer, sheet_name='Property Expense Breakdown', index=False)
+            # Create simplified dataframe with just 3 columns: Property Name, Expense Type, Amount
+            simple_breakdown_df = property_expense_breakdown_df[['Property', 'Category', 'Amount']].copy()
+            simple_breakdown_df.columns = ['Property Name', 'Expense Type', 'Amount']
+            
+            simple_breakdown_df.to_excel(writer, sheet_name='Property Expense Breakdown', index=False)
             ws_prop_expense = writer.sheets['Property Expense Breakdown']
 
             # Define a special fill for property expense breakdown
             expense_breakdown_header_fill = PatternFill(start_color='DC2626', end_color='DC2626', fill_type='solid')
 
             # Style headers
-            for col in range(1, len(property_expense_breakdown_df.columns) + 1):
+            for col in range(1, 4):  # 3 columns
                 cell = ws_prop_expense.cell(row=1, column=col)
                 cell.font = header_font
                 cell.fill = expense_breakdown_header_fill
@@ -561,29 +565,22 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
                 else:
                     base_fill = property_fill_2
 
-                for col in range(1, len(property_expense_breakdown_df.columns) + 1):
+                for col in range(1, 4):  # 3 columns
                     cell = ws_prop_expense.cell(row=row_idx, column=col)
                     cell.border = thin_border
                     cell.fill = base_fill
 
-                    # Format based on column name
-                    col_name = property_expense_breakdown_df.columns[col - 1].lower()
-                    if 'amount' in col_name:
+                    # Format based on column position
+                    if col == 1:  # Property Name
+                        cell.alignment = cell_alignment
+                        cell.font = Font(name='Calibri', size=11, bold=True, color='1E40AF')
+                    elif col == 2:  # Expense Type
+                        cell.alignment = cell_alignment
+                        cell.font = Font(name='Calibri', size=10, color='334155')
+                    elif col == 3:  # Amount
                         cell.number_format = '$#,##0.00'
                         cell.alignment = number_alignment
                         cell.font = Font(name='Calibri', size=10, bold=True, color='1E293B')
-                    elif 'count' in col_name:
-                        cell.number_format = '#,##0'
-                        cell.alignment = center_alignment
-                        cell.font = Font(name='Calibri', size=10, color='334155')
-                    elif 'property' in col_name:
-                        cell.alignment = cell_alignment
-                        cell.font = Font(name='Calibri', size=11, bold=True, color='1E40AF')
-                    elif 'category' in col_name:
-                        cell.alignment = cell_alignment
-                        cell.font = Font(name='Calibri', size=10, color='334155')
-                    else:
-                        cell.alignment = cell_alignment
 
         # Auto-adjust column widths for all sheets
         for sheet_name in writer.sheets:
