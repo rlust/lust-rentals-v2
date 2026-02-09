@@ -32,9 +32,10 @@ def get_dashboard_data(year: int):
     with sqlite3.connect(db_path) as conn:
         income_df = pd.read_sql_query("SELECT * FROM processed_income", conn)
         
-        # Query expenses WITH category overrides applied
+        # Attach overrides database and query expenses WITH category overrides applied
+        conn.execute(f"ATTACH DATABASE '{overrides_db_path}' AS overrides_db")
+        
         query = f"""
-            ATTACH DATABASE '{overrides_db_path}' AS overrides_db;
             SELECT 
                 pe.*,
                 COALESCE(eo.category, pe.category) as category_override,
