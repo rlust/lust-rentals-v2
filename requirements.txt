@@ -19,3 +19,6 @@ seaborn>=0.11.2
 httpx>=0.24.0
 python-multipart>=0.0.5
 slowapi>=0.1.9
+
+# Additional missing dependencies
+flask>=2.3.0
