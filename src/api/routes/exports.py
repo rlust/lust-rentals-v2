@@ -87,10 +87,33 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
         )
 
     try:
-        # Load data from database
+        # Load data from database with category overrides
+        from src.data_processing.review_manager import ReviewManager
+        
+        review_manager = ReviewManager()
+        overrides_db_path = review_manager.overrides_db_path
+        
         with sqlite3.connect(db_path) as conn:
             income_df = pd.read_sql_query("SELECT * FROM processed_income", conn)
-            expenses_df = pd.read_sql_query("SELECT * FROM processed_expenses", conn)
+            
+            # Query expenses WITH category overrides applied
+            query = f"""
+                ATTACH DATABASE '{overrides_db_path}' AS overrides_db;
+                SELECT 
+                    pe.*,
+                    COALESCE(eo.category, pe.category) as category_override,
+                    COALESCE(eo.property_name, pe.property_name) as property_override
+                FROM processed_expenses pe
+                LEFT JOIN overrides_db.expense_overrides eo ON pe.transaction_id = eo.transaction_id
+            """
+            expenses_df = pd.read_sql_query(query, conn)
+            
+            # Use overrides if available
+            if not expenses_df.empty:
+                if 'category_override' in expenses_df.columns:
+                    expenses_df['category'] = expenses_df['category_override']
+                if 'property_override' in expenses_df.columns:
+                    expenses_df['property_name'] = expenses_df['property_override']
     except (sqlite3.OperationalError, pd.errors.DatabaseError) as exc:
         if "no such table" in str(exc):
             raise HTTPException(
