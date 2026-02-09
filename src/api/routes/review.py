@@ -927,7 +927,7 @@ def update_income(
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 
-@router.post("/expenses/create")
+@router.post("/create-expense")
 def create_new_expense(
     request: CreateExpenseRequest,
     http_request: Request
