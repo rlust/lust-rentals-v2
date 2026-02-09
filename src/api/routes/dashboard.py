@@ -52,6 +52,12 @@ def get_dashboard_data(year: int):
                 expenses_df['category'] = expenses_df['category_override']
             if 'property_override' in expenses_df.columns:
                 expenses_df['property_name'] = expenses_df['property_override']
+            
+            # Ensure amount is numeric
+            expenses_df['amount'] = pd.to_numeric(expenses_df['amount'], errors='coerce').fillna(0.0)
+            
+        if not income_df.empty:
+            income_df['amount'] = pd.to_numeric(income_df['amount'], errors='coerce').fillna(0.0)
     
     # Filter by year
     if 'date' in income_df.columns and not income_df.empty:
@@ -632,6 +638,16 @@ def dashboard_page(year: Optional[int] = None) -> HTMLResponse:
                 <div class="card-title">Expense Ratio</div>
                 <div class="card-value" id="expense-ratio">0%</div>
             </div>
+        </div>
+
+        <div style="margin-bottom: 30px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h3 style="margin-bottom: 5px; color: #1e293b;">Export Reports</h3>
+                <p style="color: #64748b; font-size: 0.9em;">Download comprehensive tax reports including all property breakdowns.</p>
+            </div>
+            <a href="/export/excel/report" target="_blank" style="padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                📊 Download Excel Report
+            </a>
         </div>
         
         <div class="main-content">

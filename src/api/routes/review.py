@@ -62,6 +62,7 @@ class ExpenseUpdateRequest(BaseModel):
     amount: float
     category: str
     property_name: Optional[str] = None
+    memo: Optional[str] = None
 
 
 class CreateExpenseRequest(BaseModel):
@@ -71,7 +72,6 @@ class CreateExpenseRequest(BaseModel):
     amount: float
     category: str
     property_name: str
-    memo: Optional[str] = None
     memo: Optional[str] = None
 
 

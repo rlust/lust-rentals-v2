@@ -698,14 +698,47 @@ class FinancialDataProcessor:
                 raise bank_missing
 
     def load_processed_data(self, year: Optional[int] = None) -> Dict[str, DataFrame]:
-        """Load processed income and expense data from SQLite."""
+        """Load processed income and expense data from SQLite, with manual overrides applied."""
         if not self.processed_db_path.exists():
             raise FileNotFoundError("Processed database not found.")
+
+        # Get path to overrides database
+        from src.data_processing.review_manager import ReviewManager
+        review_manager = ReviewManager()
+        overrides_db_path = review_manager.overrides_db_path
 
         try:
             with sqlite3.connect(self.processed_db_path) as conn:
                 income_df = pd.read_sql_query("SELECT * FROM processed_income", conn)
-                expense_df = pd.read_sql_query("SELECT * FROM processed_expenses", conn)
+                
+                # Query expenses WITH category overrides applied
+                conn.execute(f"ATTACH DATABASE '{overrides_db_path}' AS overrides_db")
+                
+                query = f"""
+                    SELECT 
+                        pe.*,
+                        COALESCE(eo.category, pe.category) as category_override,
+                        COALESCE(eo.property_name, pe.property_name) as property_override
+                    FROM processed_expenses pe
+                    LEFT JOIN overrides_db.expense_overrides eo ON pe.transaction_id = eo.transaction_id
+                """
+                
+                expense_df = pd.read_sql_query(query, conn)
+                
+                # Apply overrides to main columns
+                if not expense_df.empty:
+                    if 'category_override' in expense_df.columns:
+                        expense_df['category'] = expense_df['category_override']
+                    if 'property_override' in expense_df.columns:
+                        expense_df['property_name'] = expense_df['property_override']
+                    
+                    # Ensure amount is numeric (critical fix for calculations)
+                    expense_df['amount'] = pd.to_numeric(expense_df['amount'], errors='coerce').fillna(0.0)
+
+                # Ensure income amount is numeric too
+                if not income_df.empty:
+                    income_df['amount'] = pd.to_numeric(income_df['amount'], errors='coerce').fillna(0.0)
+
         except sqlite3.OperationalError as exc:
             if "no such table" in str(exc):
                 raise FileNotFoundError("Processed database missing required tables.") from exc

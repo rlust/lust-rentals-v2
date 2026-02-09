@@ -146,10 +146,31 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
         expenses_df['date'] = pd.to_datetime(expenses_df['date'], errors='coerce')
         expenses_df = expenses_df[expenses_df['date'].dt.year == resolved_year]
 
+    # LOGGING FOR DEBUGGING
+    if not expenses_df.empty:
+        logger.info(f"Export Debug - Expenses DF Shape: {expenses_df.shape}")
+        logger.info(f"Export Debug - Columns: {expenses_df.columns.tolist()}")
+        logger.info(f"Export Debug - First 5 amounts raw: {expenses_df['amount'].head().tolist()}")
+
+    # Ensure amount column is numeric
+    if not income_df.empty:
+        income_df['amount'] = pd.to_numeric(income_df['amount'], errors='coerce').fillna(0.0)
+    
+    if not expenses_df.empty:
+        # Check if amount is actually present and numeric
+        expenses_df['amount'] = pd.to_numeric(expenses_df['amount'], errors='coerce').fillna(0.0)
+        logger.info(f"Export Debug - First 5 amounts numeric: {expenses_df['amount'].head().tolist()}")
+        logger.info(f"Export Debug - Sum: {expenses_df['amount'].sum()}")
+
     # Calculate summary metrics
-    total_income = income_df['amount'].sum() if not income_df.empty else 0
-    total_expenses = expenses_df['amount'].sum() if not expenses_df.empty else 0
-    net_income = total_income - abs(total_expenses)
+    total_income = income_df['amount'].sum() if not income_df.empty else 0.0
+    # Expenses are typically stored as negative, so sum them and take absolute
+    raw_expense_sum = expenses_df['amount'].sum() if not expenses_df.empty else 0.0
+    total_expenses = abs(raw_expense_sum)
+    
+    logger.info(f"Export Debug - Total Expenses Calculated: {total_expenses}")
+    
+    net_income = total_income - total_expenses
 
     # Normalize categories in expenses dataframe
     if not expenses_df.empty and 'category' in expenses_df.columns:
@@ -193,7 +214,7 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
         'Value': [
             resolved_year,
             total_income,
-            abs(total_expenses),
+            total_expenses,  # Already absolute
             net_income,
             len(income_df),
             len(expenses_df),
@@ -261,30 +282,32 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
 
     # Create detailed property expense breakdown by category
     property_expense_breakdown_data = []
-    if not expenses_df.empty and 'property_name' in expenses_df.columns and 'category_display' in expenses_df.columns:
-        # Get all unique properties and categories
+    if not expenses_df.empty and 'property_name' in expenses_df.columns:
+        # Get all unique properties
         properties = sorted(expenses_df['property_name'].dropna().unique())
-        all_categories = sorted(expenses_df['category_display'].dropna().unique())
         
-        # If no categories found, try normalized categories
-        if not all_categories:
-            all_categories = sorted(expenses_df['category_normalized'].dropna().unique())
+        # Get ALL possible categories from the master list
+        from src.categorization.category_utils import CATEGORY_DISPLAY_NAMES
+        all_categories = sorted(list(set(CATEGORY_DISPLAY_NAMES.values())))
 
         for prop in properties:
             if not prop or str(prop).strip() == '':
                 continue
 
             # Get expenses for this property grouped by category
-            property_expenses = expenses_df[expenses_df['property_name'] == prop]
-            category_breakdown = property_expenses.groupby('category_display').agg({
-                'amount': ['sum', 'count']
-            }).round(2)
-            category_breakdown.columns = ['Total', 'Count']
+            if 'category_display' in expenses_df.columns:
+                property_expenses = expenses_df[expenses_df['property_name'] == prop]
+                category_breakdown = property_expenses.groupby('category_display').agg({
+                    'amount': ['sum', 'count']
+                }).round(2)
+                category_breakdown.columns = ['Total', 'Count']
+            else:
+                category_breakdown = pd.DataFrame()
             
             # ADD ALL CATEGORIES (even if $0.00)
             for category in all_categories:
                 if category and str(category).strip():
-                    if category in category_breakdown.index:
+                    if not category_breakdown.empty and category in category_breakdown.index:
                         row = category_breakdown.loc[category]
                         property_expense_breakdown_data.append({
                             'Property': prop,

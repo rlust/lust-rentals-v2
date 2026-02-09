@@ -670,9 +670,33 @@ class PropertyReportGenerator:
             raise FileNotFoundError("Processed database not found. Run processing first.")
 
         try:
+            # Use overrides for accurate reporting
+            from src.data_processing.review_manager import ReviewManager
+            review_manager = ReviewManager()
+            overrides_db_path = review_manager.overrides_db_path
+
             with sqlite3.connect(db_path) as conn:
                 income_df = pd.read_sql_query("SELECT * FROM processed_income", conn)
-                expenses_df = pd.read_sql_query("SELECT * FROM processed_expenses", conn)
+                
+                # Query expenses WITH category overrides applied
+                conn.execute(f"ATTACH DATABASE '{overrides_db_path}' AS overrides_db")
+                query = f"""
+                    SELECT 
+                        pe.*,
+                        COALESCE(eo.category, pe.category) as category_override,
+                        COALESCE(eo.property_name, pe.property_name) as property_override
+                    FROM processed_expenses pe
+                    LEFT JOIN overrides_db.expense_overrides eo ON pe.transaction_id = eo.transaction_id
+                """
+                expenses_df = pd.read_sql_query(query, conn)
+                
+                # Apply overrides to main columns
+                if not expenses_df.empty:
+                    if 'category_override' in expenses_df.columns:
+                        expenses_df['category'] = expenses_df['category_override']
+                    if 'property_override' in expenses_df.columns:
+                        expenses_df['property_name'] = expenses_df['property_override']
+                        
         except sqlite3.OperationalError as exc:
             if "no such table" in str(exc):
                 raise FileNotFoundError(
@@ -693,11 +717,11 @@ class PropertyReportGenerator:
             expenses_df['date'] = pd.to_datetime(expenses_df['date'], errors='coerce')
             expenses_df = expenses_df[expenses_df['date'].dt.year == year]
 
-        if 'amount' in income_df.columns:
-            income_df['amount'] = income_df['amount'].abs()
+        if 'amount' in income_df.columns and not income_df.empty:
+            income_df['amount'] = pd.to_numeric(income_df['amount'], errors='coerce').fillna(0.0).abs()
 
-        if 'amount' in expenses_df.columns:
-            expenses_df['amount'] = expenses_df['amount'].abs()
+        if 'amount' in expenses_df.columns and not expenses_df.empty:
+            expenses_df['amount'] = pd.to_numeric(expenses_df['amount'], errors='coerce').fillna(0.0).abs()
 
         if income_df.empty and expenses_df.empty:
             raise FileNotFoundError("No processed data found for the requested year.")
