@@ -19,14 +19,14 @@ logger = logging.getLogger(__name__)
 
 def get_dashboard_data(year: int):
     """Load dashboard data from database, including category overrides."""
-    from src.data_processing.review_manager import ReviewManager
+    from src.api.dependencies import get_review_manager
     
     db_path = get_config().data_dir / "processed" / "processed.db"
     
     if not db_path.exists():
         raise HTTPException(status_code=404, detail="Database not found")
     
-    review_manager = ReviewManager()
+    review_manager = get_review_manager()
     overrides_db_path = review_manager.overrides_db_path
     
     with sqlite3.connect(db_path) as conn:

@@ -88,9 +88,9 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
 
     try:
         # Load data from database with category overrides
-        from src.data_processing.review_manager import ReviewManager
+        from src.api.dependencies import get_review_manager
         
-        review_manager = ReviewManager()
+        review_manager = get_review_manager()
         overrides_db_path = review_manager.overrides_db_path
         
         with sqlite3.connect(db_path) as conn:
