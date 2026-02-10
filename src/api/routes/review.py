@@ -958,6 +958,9 @@ def create_new_expense(
     try:
         # Generate unique transaction ID
         transaction_id = f"manual_{uuid.uuid4().hex[:16]}"
+        date_value = request.date.strip()
+        if ' ' not in date_value:
+            date_value = f"{date_value} 00:00:00"
         
         # Insert into processed_expenses table
         with sqlite3.connect(db_path) as conn:
@@ -973,7 +976,7 @@ def create_new_expense(
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 transaction_id,
-                request.date,
+                date_value,
                 request.description,
                 request.amount,
                 request.memo or '',
@@ -1029,6 +1032,9 @@ def create_new_income(
         now = datetime.now().isoformat()
         credit_amount = request.amount if request.amount >= 0 else 0.0
         debit_amount = abs(request.amount) if request.amount < 0 else 0.0
+        date_value = request.date.strip()
+        if ' ' not in date_value:
+            date_value = f"{date_value} 00:00:00"
 
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
@@ -1041,7 +1047,7 @@ def create_new_income(
             """, (
                 None,
                 'Manual Entry',
-                request.date,
+                date_value,
                 credit_amount,
                 debit_amount,
                 None,
