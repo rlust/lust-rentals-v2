@@ -823,17 +823,16 @@
                         // Create new expense
                         endpoint = `/review/create-expense`;
                         method = 'POST';
-                        // No transaction_id needed for create
                     }
                 } else {
-                    // Income logic (currently only supports update/PUT in this UI version)
-                    if (!isEdit) {
-                        showToast('Creating new income transactions is not yet supported.', 'warning');
-                        return;
+                    if (isEdit) {
+                        endpoint = `/review/income/${transactionId}`;
+                        method = 'PUT';
+                        payload.transaction_id = transactionId;
+                    } else {
+                        endpoint = `/review/create-income`;
+                        method = 'POST';
                     }
-                    endpoint = `/review/income/${transactionId}`;
-                    method = 'PUT';
-                    payload.transaction_id = transactionId;
                 }
 
                 console.log(`Sending ${method} request to ${endpoint}`, payload);

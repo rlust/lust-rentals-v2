@@ -75,6 +75,15 @@ class CreateExpenseRequest(BaseModel):
     memo: Optional[str] = None
 
 
+class CreateIncomeRequest(BaseModel):
+    """Request to create a new income transaction."""
+    date: str
+    description: str
+    amount: float
+    property_name: str
+    memo: Optional[str] = None
+
+
 class IncomeUpdateRequest(BaseModel):
     """Request to update a full income transaction."""
     transaction_id: str
@@ -996,3 +1005,83 @@ def create_new_expense(
     except sqlite3.Error as e:
         logger.error(f"Error creating expense: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+@router.post("/create-income")
+def create_new_income(
+    request: CreateIncomeRequest,
+    http_request: Request
+) -> dict:
+    """Create a brand new income transaction."""
+    import uuid
+    from datetime import datetime
+
+    db_path = get_config().data_dir / "processed" / "processed.db"
+    review_manager = get_review_manager()
+
+    if not request.date or not request.description or not request.property_name:
+        raise HTTPException(status_code=400, detail="date, description, and property_name are required")
+    if request.amount is None:
+        raise HTTPException(status_code=400, detail="amount is required")
+
+    try:
+        transaction_id = f"manual_income_{uuid.uuid4().hex[:16]}"
+        now = datetime.now().isoformat()
+        credit_amount = request.amount if request.amount >= 0 else 0.0
+        debit_amount = abs(request.amount) if request.amount < 0 else 0.0
+
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO processed_income (
+                    account_number, account_name, date, credit_amount, debit_amount, code,
+                    description, reference, memo, transaction_type, amount, transaction_id,
+                    property_name, mapping_notes, mapping_status, created_at, updated_at, modified_by
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                None,
+                'Manual Entry',
+                request.date,
+                credit_amount,
+                debit_amount,
+                None,
+                request.description,
+                None,
+                request.memo or '',
+                'income',
+                request.amount,
+                transaction_id,
+                request.property_name,
+                request.memo or 'manual entry',
+                'overridden',
+                now,
+                now,
+                'web_user'
+            ))
+            conn.commit()
+
+        with sqlite3.connect(review_manager.overrides_db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO income_overrides (
+                    transaction_id, property_name, mapping_notes, created_at, updated_at, modified_by
+                ) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'web_user')
+                ON CONFLICT(transaction_id) DO UPDATE SET
+                    property_name = excluded.property_name,
+                    mapping_notes = excluded.mapping_notes,
+                    updated_at = CURRENT_TIMESTAMP,
+                    modified_by = 'web_user'
+            """, (transaction_id, request.property_name, request.memo or 'manual entry'))
+            conn.commit()
+
+        logger.info(f"Created new income transaction: {transaction_id}")
+        return {
+            "status": "success",
+            "transaction_id": transaction_id,
+            "message": f"New income recorded for {request.property_name}"
+        }
+
+    except sqlite3.Error as e:
+        logger.error(f"Error creating income: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+

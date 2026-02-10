@@ -48,6 +48,9 @@ def test_process_bank_endpoint(api_client: TestClient) -> None:
 
 
 def test_generate_reports_endpoints(api_client: TestClient) -> None:
+    process_response = api_client.post("/process/bank", json={"year": 2025})
+    assert process_response.status_code == 200
+
     summary_response = api_client.post(
         "/reports/annual",
         json={"year": 2025},
@@ -147,6 +150,27 @@ def test_excel_export_endpoint(api_client: TestClient) -> None:
     # Optionally verify it's a valid Excel file by checking the file signature
     # Excel files start with PK (ZIP signature)
     assert excel_response.content[:2] == b'PK'
+
+
+def test_create_income_transaction(api_client: TestClient) -> None:
+    api_client.post("/process/bank", json={"year": 2025})
+
+    payload = {
+        "date": "2025-02-01",
+        "description": "Manual Rent Payment",
+        "amount": 1234.56,
+        "property_name": "118 W Shields St",
+        "memo": "Manual entry for tenant transfer"
+    }
+
+    response = api_client.post("/review/create-income", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "success"
+    transaction_id = body["transaction_id"]
+
+    listing = api_client.get("/review/income/all", params={"limit": 0}).json()
+    assert any(tx["transaction_id"] == transaction_id for tx in listing.get("data", []))
 
 
 def test_save_and_reprocess_flow_uses_latest_csv(api_client: TestClient) -> None:
