@@ -12,10 +12,10 @@ import pandas as pd
 
 from src.api.dependencies import get_config
 from src.categorization.category_utils import normalize_category, get_display_name
+from src.utils.properties import normalize_property_column
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
 
 def resolve_report_year(year: Optional[int]) -> int:
     """Resolve the report year, defaulting to previous year if not specified."""
@@ -87,34 +87,16 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
         )
 
     try:
-        # Load data from database with category overrides
         from src.api.dependencies import get_review_manager
-        
+
         review_manager = get_review_manager()
-        overrides_db_path = review_manager.overrides_db_path
-        
+
         with sqlite3.connect(db_path) as conn:
             income_df = pd.read_sql_query("SELECT * FROM processed_income", conn)
-            
-            # Attach overrides database and query expenses WITH category overrides applied
-            conn.execute(f"ATTACH DATABASE '{overrides_db_path}' AS overrides_db")
-            
-            query = f"""
-                SELECT 
-                    pe.*,
-                    COALESCE(eo.category, pe.category) as category_override,
-                    COALESCE(eo.property_name, pe.property_name) as property_override
-                FROM processed_expenses pe
-                LEFT JOIN overrides_db.expense_overrides eo ON pe.transaction_id = eo.transaction_id
-            """
-            expenses_df = pd.read_sql_query(query, conn)
-            
-            # Use overrides if available
-            if not expenses_df.empty:
-                if 'category_override' in expenses_df.columns:
-                    expenses_df['category'] = expenses_df['category_override']
-                if 'property_override' in expenses_df.columns:
-                    expenses_df['property_name'] = expenses_df['property_override']
+            expenses_df = pd.read_sql_query("SELECT * FROM processed_expenses", conn)
+
+        income_df = review_manager.apply_income_overrides(income_df)
+        expenses_df = review_manager.apply_expense_overrides(expenses_df)
     except (sqlite3.OperationalError, pd.errors.DatabaseError) as exc:
         if "no such table" in str(exc):
             raise HTTPException(
@@ -130,6 +112,9 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
             status_code=500,
             detail=f"Failed to read data: {exc}"
         ) from exc
+
+    income_df = normalize_property_column(income_df)
+    expenses_df = normalize_property_column(expenses_df)
 
     if income_df.empty and expenses_df.empty:
         raise HTTPException(
@@ -283,12 +268,30 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
     # Create detailed property expense breakdown by category
     property_expense_breakdown_data = []
     if not expenses_df.empty and 'property_name' in expenses_df.columns:
-        # Get all unique properties
-        properties = sorted(expenses_df['property_name'].dropna().unique())
-        
-        # Get ALL possible categories from the master list
+        # Get all unique properties (including previously unassigned rows)
+        properties = sorted(expenses_df['property_name'].unique())
+
+        # Get ALL possible categories from both the master list and the actual data
         from src.categorization.category_utils import CATEGORY_DISPLAY_NAMES
-        all_categories = sorted(list(set(CATEGORY_DISPLAY_NAMES.values())))
+
+        master_categories = {
+            str(value).strip()
+            for value in CATEGORY_DISPLAY_NAMES.values()
+            if value and str(value).strip()
+        }
+
+        data_categories = set()
+        if 'category_display' in expenses_df.columns:
+            data_categories = set(
+                expenses_df['category_display']
+                .dropna()
+                .astype(str)
+                .str.strip()
+                .tolist()
+            )
+        all_categories = sorted(
+            cat for cat in master_categories.union(data_categories) if cat
+        )
 
         for prop in properties:
             if not prop or str(prop).strip() == '':
@@ -301,6 +304,9 @@ def export_excel_report(http_request: Request, year: Optional[int] = None) -> St
                     'amount': ['sum', 'count']
                 }).round(2)
                 category_breakdown.columns = ['Total', 'Count']
+                category_breakdown.index = category_breakdown.index.map(
+                    lambda x: str(x).strip() if isinstance(x, str) else x
+                )
             else:
                 category_breakdown = pd.DataFrame()
             
